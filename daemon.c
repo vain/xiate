@@ -27,6 +27,7 @@ struct term_options
 static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *, struct term_options *);
+static void sig_bell(VteTerminal *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_icon_title_changed(VteTerminal *, gpointer);
@@ -87,6 +88,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
 
     /* Signals. */
+    g_signal_connect(G_OBJECT(term), "bell",
+                     G_CALLBACK(sig_bell), win);
     g_signal_connect(G_OBJECT(term), "child-exited",
                      G_CALLBACK(sig_child_exited), win);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
@@ -109,6 +112,20 @@ setup_window(GtkWidget *win, struct term_options *to)
     gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
     g_signal_connect(G_OBJECT(win), "delete-event",
                      G_CALLBACK(gtk_main_quit), NULL);
+}
+
+void
+sig_bell(VteTerminal *term, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+
+    /* Credits go to sakura. The author says:
+     * Remove the urgency hint. This is necessary to signal the window
+     * manager that a new urgent event happened when the urgent hint is
+     * set next time.
+     */
+    gtk_window_set_urgency_hint(GTK_WINDOW(win), FALSE);
+    gtk_window_set_urgency_hint(GTK_WINDOW(win), TRUE);
 }
 
 void
