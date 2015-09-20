@@ -17,6 +17,7 @@
 struct term_options
 {
     char **argv;
+    char *message;
     char *title;
     char *wm_class;
     char *wm_name;
@@ -142,7 +143,7 @@ gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer user_data)
 {
-    gchar message[MSG_SIZE] = "", *p;
+    gchar *p;
     GInputStream* s;
     gssize sz_read;
     GSList *args = NULL;
@@ -152,14 +153,15 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     char *value;
 
     to = calloc(sizeof(struct term_options), 1);
+    to->message = calloc(1, MSG_SIZE);
     to->title = __NAME__;
     to->wm_class = __NAME_CAPITALIZED__;
     to->wm_name = __NAME__;
     
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-    sz_read = g_input_stream_read(s, message, MSG_SIZE, NULL, NULL);
+    sz_read = g_input_stream_read(s, to->message, MSG_SIZE, NULL, NULL);
 
-    for (p = message; (p - message) < sz_read; p++)
+    for (p = to->message; (p - to->message) < sz_read; p++)
     {
         switch (*p)
         {
@@ -170,7 +172,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 value = p;
                 if (option == 'c' || option == 'n' || option == 't')
                 {
-                    while (*p != 0 && (p - message) < sz_read)
+                    while (*p != 0 && (p - to->message) < sz_read)
                         p++;
                     if (*p != 0)
                         *p = 0;
@@ -185,6 +187,10 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 else
                 {
                     fprintf(stderr, __NAME__": Garbled options, aborting.\n");
+                    if (to->argv != NULL)
+                        free(to->argv);
+                    free(to->message);
+                    free(to);
                     return TRUE;
                 }
                 break;
@@ -194,7 +200,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 p++;
                 args = g_slist_append(args, p);
                 /* Jump over the string. */
-                while (*p != 0 && (p - message) < sz_read)
+                while (*p != 0 && (p - to->message) < sz_read)
                     p++;
                 break;
         }
@@ -256,6 +262,9 @@ term_new(gpointer user_data)
     gtk_container_add(GTK_CONTAINER(win), term);
     gtk_widget_show_all(win);
 
+    if (to->argv != NULL)
+        free(to->argv);
+    free(to->message);
     free(to);
 
     /* Remove this source. */
