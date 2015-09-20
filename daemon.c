@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <vte/vte.h>
 
+#include "config.h"
+
 
 #define MSG_SIZE 4096
 
@@ -33,7 +35,6 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
     PangoFontDescription *font_desc = NULL;
     gboolean r;
-    char *args_default[] = { "/bin/bash", "-l", "-i", NULL };
     char **args_use;
 
     if (to->argv != NULL)
@@ -42,7 +43,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         args_use = args_default;
 
     /* Appearance */
-    font_desc = pango_font_description_from_string("Ttyp0 10");
+    font_desc = pango_font_description_from_string(font_default);
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
 
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
@@ -68,7 +69,7 @@ setup_css(void)
             GTK_STYLE_PROVIDER(provider),
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     gtk_css_provider_load_from_data(provider,
-                                    "GtkWindow { background-color: #000000; }",
+                                    "GtkWindow { background-color: " BG_COLOR "; }",
                                     -1, NULL);
     g_object_unref(provider);
 }
