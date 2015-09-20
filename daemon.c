@@ -18,6 +18,7 @@ struct term_options
 {
     char **argv;
     char *cwd;
+    gboolean hold;
     char *message;
     char *title;
     char *wm_class;
@@ -105,8 +106,9 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     /* Signals. */
     g_signal_connect(G_OBJECT(term), "bell",
                      G_CALLBACK(sig_bell), win);
-    g_signal_connect(G_OBJECT(term), "child-exited",
-                     G_CALLBACK(sig_child_exited), win);
+    if (!to->hold)
+        g_signal_connect(G_OBJECT(term), "child-exited",
+                         G_CALLBACK(sig_child_exited), win);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), NULL);
     g_signal_connect(G_OBJECT(term), "icon-title-changed",
@@ -220,6 +222,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
     to = calloc(sizeof(struct term_options), 1);
     to->cwd = NULL;
+    to->hold = FALSE;
     to->message = calloc(1, MSG_SIZE);
     to->title = __NAME__;
     to->wm_class = __NAME_CAPITALIZED__;
@@ -240,6 +243,9 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 /* Jump over the string. */
                 while (*p != 0 && (p - to->message) < sz_read)
                     p++;
+                break;
+            case 'H':
+                to->hold = TRUE;
                 break;
             case 'O':
                 p++;

@@ -3,6 +3,7 @@
 # XTerm'ish arguments
 class=
 execute=()
+hold=0
 name=
 title=
 
@@ -19,6 +20,9 @@ do
         -e)
             shift
             execute=("$@")
+            ;;
+        -hold)
+            hold=1
             ;;
         -name)
             name=$2
@@ -41,6 +45,7 @@ done
     [[ -n "$class" ]] && printf "Oc$class\000"
     [[ -n "$name" ]] && printf "On$name\000"
     [[ -n "$title" ]] && printf "Ot$title\000"
+    (( hold )) && printf 'H'
     if (( "${#execute[@]}" > 0 ))
     then
         for i in "${execute[@]}"
