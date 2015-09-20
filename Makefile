@@ -32,7 +32,7 @@ install: $(__NAME__) installdirs
 	@#$(INSTALL_DATA) man1/$(__NAME__).1 $(DESTDIR)$(man1dir)/$(__NAME__).1
 
 installdirs:
-	@#mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
+	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
 
 clean:
 	rm -f $(__NAME__)
