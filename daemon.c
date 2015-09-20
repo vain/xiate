@@ -36,6 +36,11 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
     char **args_use;
     PangoFontDescription *font_desc = NULL;
+    size_t i;
+    GdkRGBA c_cursor_gdk;
+    GdkRGBA c_foreground_gdk;
+    GdkRGBA c_background_gdk;
+    GdkRGBA c_palette_gdk[16];
 
     if (to->argv != NULL)
         args_use = to->argv;
@@ -47,6 +52,15 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
+
+    gdk_rgba_parse(&c_cursor_gdk, c_cursor);
+    gdk_rgba_parse(&c_foreground_gdk, c_foreground);
+    gdk_rgba_parse(&c_background_gdk, c_background);
+    for (i = 0; i < 16; i++)
+        gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
+    vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk, &c_background_gdk,
+                            c_palette_gdk, 16);
+    vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
 
     /* Spawn child. */
     g_signal_connect(G_OBJECT(term), "child-exited",
