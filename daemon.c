@@ -137,10 +137,6 @@ gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer user_data)
 {
-    (void)service;
-    (void)source_object;
-    (void)user_data;
-
     gchar message[MSG_SIZE] = "", *p;
     GInputStream* s;
     gssize sz_read;
