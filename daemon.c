@@ -173,10 +173,8 @@ socket_listen(char *suffix)
     GSocketAddress *sa;
     GError *err = NULL;
     char *name, *path;
-    GdkDisplay *display = gdk_display_get_default();
 
-    name = g_strdup_printf("%s-%s-%s", __NAME__, gdk_display_get_name(display),
-                           suffix);
+    name = g_strdup_printf("%s-%s", __NAME__, suffix);
     path = g_build_filename(g_get_user_runtime_dir(), name, NULL);
     g_free(name);
     unlink(path);
