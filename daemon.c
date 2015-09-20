@@ -52,6 +52,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
     gdk_rgba_parse(&c_cursor_gdk, c_cursor);
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
