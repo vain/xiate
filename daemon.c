@@ -42,7 +42,16 @@ static gboolean term_new(gpointer);
 void
 setup_css(void)
 {
-    /* Style provider for this screen. */
+    /* GTK3 and VTE are products of ~2015 and, as such, require a
+     * significant amount of computing power. On "slower" machines (even
+     * on fast ones), this can result in flickering: First, the window
+     * and its background is drawn, then the VTE widget is drawn. If the
+     * window has a bright background, it's likely to be visible for a
+     * short period of time -- a short "flash". This effect can be seen
+     * in other VTE terminals, too.
+     *
+     * By setting the background color of the window to something close
+     * to the terminals background, we can reduce this effect. */
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
     GdkScreen *screen = gdk_display_get_default_screen(display);
