@@ -1,24 +1,27 @@
 #!/bin/bash
 
-cmd=()
-suffix=main
+# XTerm'ish arguments
+class=
+execute=()
+name=
 title=
-wm_class=
-wm_name=
+
+# Our own arguments
+suffix=main
 
 while (( $# > 0 ))
 do
     case "$1" in
+        -class)
+            class=$2
+            shift
+            ;;
         -e)
             shift
-            cmd=("$@")
-            ;;
-        -class)
-            wm_class=$2
-            shift
+            execute=("$@")
             ;;
         -name)
-            wm_name=$2
+            name=$2
             shift
             ;;
         -title)
@@ -35,12 +38,12 @@ done
 
 (
     printf "OC$PWD\000"
-    [[ -n "$wm_class" ]] && printf "Oc$wm_class\000"
-    [[ -n "$wm_name" ]] && printf "On$wm_name\000"
+    [[ -n "$class" ]] && printf "Oc$class\000"
+    [[ -n "$name" ]] && printf "On$name\000"
     [[ -n "$title" ]] && printf "Ot$title\000"
-    if (( "${#cmd[@]}" > 0 ))
+    if (( "${#execute[@]}" > 0 ))
     then
-        for i in "${cmd[@]}"
+        for i in "${execute[@]}"
         do
             printf "A$i\000"
         done

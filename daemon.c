@@ -232,6 +232,15 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     {
         switch (*p)
         {
+            case 'A':
+                /* After the 'A' follows a NUL terminated string. Add
+                 * this string to our list of arguments. */
+                p++;
+                args = g_slist_append(args, p);
+                /* Jump over the string. */
+                while (*p != 0 && (p - to->message) < sz_read)
+                    p++;
+                break;
             case 'O':
                 p++;
                 option = *p;
@@ -263,15 +272,6 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                     free(to);
                     return TRUE;
                 }
-                break;
-            case 'A':
-                /* After the 'A' follows a NUL terminated string. Add
-                 * this string to our list of arguments. */
-                p++;
-                args = g_slist_append(args, p);
-                /* Jump over the string. */
-                while (*p != 0 && (p - to->message) < sz_read)
-                    p++;
                 break;
         }
     }
