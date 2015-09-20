@@ -34,6 +34,7 @@ do
 done
 
 (
+    printf "OC$PWD\000"
     [[ -n "$wm_class" ]] && printf "Oc$wm_class\000"
     [[ -n "$wm_name" ]] && printf "On$wm_name\000"
     [[ -n "$title" ]] && printf "Ot$title\000"

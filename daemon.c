@@ -17,6 +17,7 @@
 struct term_options
 {
     char **argv;
+    char *cwd;
     char *message;
     char *title;
     char *wm_class;
@@ -100,7 +101,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                      G_CALLBACK(sig_increase_font_size), NULL);
 
     /* Spawn child. */
-    return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
+    return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
                                    args_use, NULL, G_SPAWN_SEARCH_PATH, NULL,
                                    NULL, NULL, NULL, NULL);
 }
@@ -183,6 +184,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     char *value;
 
     to = calloc(sizeof(struct term_options), 1);
+    to->cwd = NULL;
     to->message = calloc(1, MSG_SIZE);
     to->title = __NAME__;
     to->wm_class = __NAME_CAPITALIZED__;
@@ -200,13 +202,16 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 option = *p;
                 p++;
                 value = p;
-                if (option == 'c' || option == 'n' || option == 't')
+                if (option == 'C' || option == 'c' || option == 'n' ||
+                    option == 't')
                 {
                     while (*p != 0 && (p - to->message) < sz_read)
                         p++;
                     if (*p != 0)
                         *p = 0;
 
+                    if (option == 'C')
+                        to->cwd = value;
                     if (option == 'c')
                         to->wm_class = value;
                     if (option == 'n')
