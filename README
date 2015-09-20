@@ -39,4 +39,10 @@ client. You first start the daemon:
 
     $ muted
 
-It connects to the current X11 display (according to $DISPLAY).
+It connects to the current X11 display (according to $DISPLAY), but does
+not create any windows yet. It also creates a UNIX socket and waits for
+connections. Using a simple protocol, you can instruct muTE to actually
+launch a new terminal window and/or run a program:
+
+    $ mute
+    $ mute -e vim
