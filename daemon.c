@@ -124,8 +124,6 @@ setup_window(GtkWidget *win, struct term_options *to)
 {
     gtk_window_set_title(GTK_WINDOW(win), to->title);
     gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
-    g_signal_connect(G_OBJECT(win), "delete-event",
-                     G_CALLBACK(gtk_main_quit), NULL);
 }
 
 void
