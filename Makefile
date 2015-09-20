@@ -19,7 +19,7 @@ man1dir = $(mandir)/man1
 
 all: $(__NAME__)
 
-$(__NAME__): daemon.c
+$(__NAME__): daemon.c config.h
 	$(CC) $(CFLAGS) $(LDFLAGS) \
 		-D__NAME__=\"$(__NAME__)\" \
 		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)\" \
