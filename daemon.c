@@ -46,6 +46,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     font_desc = pango_font_description_from_string(font_default);
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
+    vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
 
     /* Spawn child. */
     g_signal_connect(G_OBJECT(term), "child-exited",
