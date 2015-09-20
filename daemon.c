@@ -23,9 +23,10 @@ struct term_options
 void
 child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
 {
+    GtkWidget *win = (GtkWidget *)data;
+
     (void)obj;
     (void)pspec;
-    GtkWidget *win = (GtkWidget *)data;
 
     gtk_widget_destroy(win);
 }
@@ -33,28 +34,25 @@ child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
 gboolean
 setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
-    PangoFontDescription *font_desc = NULL;
-    gboolean r;
     char **args_use;
+    PangoFontDescription *font_desc = NULL;
 
     if (to->argv != NULL)
         args_use = to->argv;
     else
         args_use = args_default;
 
-    /* Appearance */
+    /* Appearance. */
     font_desc = pango_font_description_from_string(font_default);
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
-
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
 
-    /* Spawn child */
+    /* Spawn child. */
     g_signal_connect(G_OBJECT(term), "child-exited",
                      G_CALLBACK(child_exited), win);
-    r = vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
-                                args_use, NULL, G_SPAWN_DEFAULT, NULL, NULL,
-                                NULL, NULL, NULL);
-    return r;
+    return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
+                                   args_use, NULL, G_SPAWN_DEFAULT, NULL, NULL,
+                                   NULL, NULL, NULL);
 }
 
 void
@@ -162,8 +160,8 @@ socket_listen(char *suffix)
     char *name, *path;
     GdkDisplay *display = gdk_display_get_default();
 
-    name = g_strdup_printf("%s-%s-%s", __NAME__,
-                           gdk_display_get_name(display), suffix);
+    name = g_strdup_printf("%s-%s-%s", __NAME__, gdk_display_get_name(display),
+                           suffix);
     path = g_build_filename(g_get_user_runtime_dir(), name, NULL);
     g_free(name);
     unlink(path);
@@ -171,7 +169,8 @@ socket_listen(char *suffix)
     g_free(path);
 
     sock = g_threaded_socket_service_new(-1);
-    if (!g_socket_listener_add_address(G_SOCKET_LISTENER(sock), sa, G_SOCKET_TYPE_STREAM,
+    if (!g_socket_listener_add_address(G_SOCKET_LISTENER(sock), sa,
+                                       G_SOCKET_TYPE_STREAM,
                                        G_SOCKET_PROTOCOL_DEFAULT,
                                        NULL, NULL, &err))
     {
@@ -179,9 +178,7 @@ socket_listen(char *suffix)
         exit(EXIT_FAILURE);
     }
 
-    g_signal_connect(G_OBJECT(sock), "run",
-                     G_CALLBACK(sock_incoming), NULL);
-
+    g_signal_connect(G_OBJECT(sock), "run", G_CALLBACK(sock_incoming), NULL);
     g_socket_service_start(sock);
 }
 
