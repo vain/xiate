@@ -248,6 +248,8 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 to->hold = TRUE;
                 break;
             case 'O':
+                /* FIXME: Inner "p++" statements like these don't check
+                 * if they have exceeded the buffer. */
                 p++;
                 option = *p;
                 p++;
