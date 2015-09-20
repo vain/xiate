@@ -20,26 +20,15 @@ struct term_options
 };
 
 
-static void child_exited(GObject *, GParamSpec *, gpointer);
 static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *);
+static void sig_child_exited(GObject *, GParamSpec *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
 
-
-void
-child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
-{
-    GtkWidget *win = (GtkWidget *)data;
-
-    (void)obj;
-    (void)pspec;
-
-    gtk_widget_destroy(win);
-}
 
 void
 setup_css(void)
@@ -92,7 +81,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Spawn child. */
     g_signal_connect(G_OBJECT(term), "child-exited",
-                     G_CALLBACK(child_exited), win);
+                     G_CALLBACK(sig_child_exited), win);
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
                                    args_use, NULL, G_SPAWN_DEFAULT, NULL, NULL,
                                    NULL, NULL, NULL);
@@ -103,6 +92,17 @@ setup_window(GtkWidget *win)
 {
     g_signal_connect(G_OBJECT(win), "delete-event",
                      G_CALLBACK(gtk_main_quit), NULL);
+}
+
+void
+sig_child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+
+    (void)obj;
+    (void)pspec;
+
+    gtk_widget_destroy(win);
 }
 
 gboolean
