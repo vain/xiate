@@ -76,6 +76,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GdkRGBA c_cursor_gdk;
     GdkRGBA c_foreground_gdk;
     GdkRGBA c_background_gdk;
+    GdkRGBA c_bold_gdk;
     GdkRGBA c_palette_gdk[16];
 
     if (to->argv != NULL)
@@ -93,10 +94,12 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     gdk_rgba_parse(&c_cursor_gdk, c_cursor);
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
+    gdk_rgba_parse(&c_bold_gdk, c_bold);
     for (i = 0; i < 16; i++)
         gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
     vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk,
                             &c_background_gdk, c_palette_gdk, 16);
+    vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_bold_gdk);
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
 
     /* Signals. */

@@ -6,6 +6,7 @@ guint scrollback_lines = 50000;
 char *c_cursor = "#00FF00";
 char *c_foreground = "#AAAAAA";
 char *c_background = "#000000";
+char *c_bold = "#FFFFFF";
 char *c_palette[16] = {
     /* Dark */
     /* Black */   "#000000",
