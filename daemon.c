@@ -83,8 +83,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     gdk_rgba_parse(&c_background_gdk, c_background);
     for (i = 0; i < 16; i++)
         gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
-    vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk, &c_background_gdk,
-                            c_palette_gdk, 16);
+    vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk,
+                            &c_background_gdk, c_palette_gdk, 16);
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
 
     /* Signals. */
@@ -101,8 +101,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Spawn child. */
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
-                                   args_use, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
-                                   NULL, NULL, NULL);
+                                   args_use, NULL, G_SPAWN_SEARCH_PATH, NULL,
+                                   NULL, NULL, NULL, NULL);
 }
 
 void
