@@ -33,6 +33,7 @@ static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_icon_title_changed(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
+static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
@@ -108,6 +109,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                      G_CALLBACK(sig_icon_title_changed), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), NULL);
+    g_signal_connect(G_OBJECT(term), "key-press-event",
+                     G_CALLBACK(sig_key_press), NULL);
 
     /* Spawn child. */
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
@@ -177,6 +180,27 @@ sig_increase_font_size(VteTerminal *term, gpointer data)
     pango_font_description_set_size(f, sz);
     vte_terminal_set_font(term, f);
     pango_font_description_free(f);
+}
+
+gboolean
+sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+    VteTerminal *term = VTE_TERMINAL(widget);
+
+    if (((GdkEventKey *)event)->state & GDK_CONTROL_MASK)
+    {
+        switch (((GdkEventKey *)event)->keyval)
+        {
+            case GDK_KEY_C:
+                vte_terminal_copy_clipboard(term);
+                return TRUE;
+            case GDK_KEY_V:
+                vte_terminal_paste_clipboard(term);
+                return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 gboolean
