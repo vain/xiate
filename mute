@@ -45,4 +45,4 @@ done
             printf "A$i\000"
         done
     fi
-) | socat - UNIX:/var/run/user/$(id -u)/muted-"$suffix"
+) | socat - UNIX:/var/run/user/$(id -u)/muted-"$suffix",retry=10
