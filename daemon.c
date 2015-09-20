@@ -85,6 +85,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk, &c_background_gdk,
                             c_palette_gdk, 16);
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
+
+    /* Signals. */
+    g_signal_connect(G_OBJECT(term), "child-exited",
+                     G_CALLBACK(sig_child_exited), win);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), NULL);
     g_signal_connect(G_OBJECT(term), "icon-title-changed",
@@ -93,8 +97,6 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                      G_CALLBACK(sig_increase_font_size), NULL);
 
     /* Spawn child. */
-    g_signal_connect(G_OBJECT(term), "child-exited",
-                     G_CALLBACK(sig_child_exited), win);
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
                                    args_use, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
                                    NULL, NULL, NULL);
