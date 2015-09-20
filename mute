@@ -1,0 +1,47 @@
+#!/bin/bash
+
+cmd=()
+suffix=main
+title=
+wm_class=
+wm_name=
+
+while (( $# > 0 ))
+do
+    case "$1" in
+        -e)
+            shift
+            cmd=("$@")
+            ;;
+        -class)
+            wm_class=$2
+            shift
+            ;;
+        -name)
+            wm_name=$2
+            shift
+            ;;
+        -title)
+            title=$2
+            shift
+            ;;
+        --suffix)
+            suffix=$2
+            shift
+            ;;
+    esac
+    shift
+done
+
+(
+    [[ -n "$wm_class" ]] && printf "Oc$wm_class\000"
+    [[ -n "$wm_name" ]] && printf "On$wm_name\000"
+    [[ -n "$title" ]] && printf "Ot$title\000"
+    if (( "${#cmd[@]}" > 0 ))
+    then
+        for i in "${cmd[@]}"
+        do
+            printf "A$i\000"
+        done
+    fi
+) | socat - UNIX:/var/run/user/$(id -u)/muted-"$suffix"
