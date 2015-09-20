@@ -24,6 +24,8 @@ static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
+static void sig_decrease_font_size(VteTerminal *, gpointer);
+static void sig_increase_font_size(VteTerminal *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
@@ -78,6 +80,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk, &c_background_gdk,
                             c_palette_gdk, 16);
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
+    g_signal_connect(G_OBJECT(term), "decrease-font-size",
+                     G_CALLBACK(sig_decrease_font_size), NULL);
+    g_signal_connect(G_OBJECT(term), "increase-font-size",
+                     G_CALLBACK(sig_increase_font_size), NULL);
 
     /* Spawn child. */
     g_signal_connect(G_OBJECT(term), "child-exited",
@@ -100,6 +106,31 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
     GtkWidget *win = (GtkWidget *)data;
 
     gtk_widget_destroy(win);
+}
+
+void
+sig_decrease_font_size(VteTerminal *term, gpointer data)
+{
+    PangoFontDescription *f = pango_font_description_copy(
+            vte_terminal_get_font(term));
+    gint sz = pango_font_description_get_size(f);
+    sz -= PANGO_SCALE;
+    sz = sz <= 0 ? 1 : sz;
+    pango_font_description_set_size(f, sz);
+    vte_terminal_set_font(term, f);
+    pango_font_description_free(f);
+}
+
+void
+sig_increase_font_size(VteTerminal *term, gpointer data)
+{
+    PangoFontDescription *f = pango_font_description_copy(
+            vte_terminal_get_font(term));
+    gint sz = pango_font_description_get_size(f);
+    sz += PANGO_SCALE;
+    pango_font_description_set_size(f, sz);
+    vte_terminal_set_font(term, f);
+    pango_font_description_free(f);
 }
 
 gboolean
