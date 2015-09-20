@@ -29,6 +29,7 @@ static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *, struct term_options *);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
+static void sig_icon_title_changed(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
@@ -86,6 +87,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), NULL);
+    g_signal_connect(G_OBJECT(term), "icon-title-changed",
+                     G_CALLBACK(sig_icon_title_changed), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), NULL);
 
@@ -125,6 +128,14 @@ sig_decrease_font_size(VteTerminal *term, gpointer data)
     pango_font_description_set_size(f, sz);
     vte_terminal_set_font(term, f);
     pango_font_description_free(f);
+}
+
+void
+sig_icon_title_changed(VteTerminal *term, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+
+    gtk_window_set_title(GTK_WINDOW(win), vte_terminal_get_icon_title(term));
 }
 
 void
