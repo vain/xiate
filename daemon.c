@@ -23,7 +23,7 @@ struct term_options
 static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *);
-static void sig_child_exited(GObject *, GParamSpec *, gpointer);
+static void sig_child_exited(VteTerminal *, gint, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
@@ -95,12 +95,9 @@ setup_window(GtkWidget *win)
 }
 
 void
-sig_child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
+sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
     GtkWidget *win = (GtkWidget *)data;
-
-    (void)obj;
-    (void)pspec;
 
     gtk_widget_destroy(win);
 }
