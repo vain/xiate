@@ -89,7 +89,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     g_signal_connect(G_OBJECT(term), "child-exited",
                      G_CALLBACK(sig_child_exited), win);
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, NULL,
-                                   args_use, NULL, G_SPAWN_DEFAULT, NULL, NULL,
+                                   args_use, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
                                    NULL, NULL, NULL);
 }
 
