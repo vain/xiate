@@ -1,0 +1,42 @@
+                                 ====
+                                 muTE
+                                 ====
+
+
+muTE is a minimalistic, unobtrusive terminal emulator.
+
+
+Installation
+------------
+
+The following C libraries are required:
+
+    - GTK+ 3
+    - VTE 0.40.2
+
+The following external tools are also required but kind of optional:
+
+    - GNU bash
+    - socat
+
+muTE expects to be run on a POSIX-ish operating system.
+
+You can customize the program by creating your own config.h based on
+config.def.h. In any case, config.h must exist in order to build the
+program.
+
+To build the program and install it to /usr/local:
+
+    $ make
+    # make install
+
+
+Running
+-------
+
+For various reasons, muTE is split into two components: A daemon and a
+client. You first start the daemon:
+
+    $ muted
+
+It connects to the current X11 display (according to $DISPLAY).
