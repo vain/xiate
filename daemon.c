@@ -17,12 +17,15 @@
 struct term_options
 {
     char **argv;
+    char *title;
+    char *wm_class;
+    char *wm_name;
 };
 
 
 static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
-static void setup_window(GtkWidget *);
+static void setup_window(GtkWidget *, struct term_options *);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
@@ -94,8 +97,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 }
 
 void
-setup_window(GtkWidget *win)
+setup_window(GtkWidget *win, struct term_options *to)
 {
+    gtk_window_set_title(GTK_WINDOW(win), to->title);
+    gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
     g_signal_connect(G_OBJECT(win), "delete-event",
                      G_CALLBACK(gtk_main_quit), NULL);
 }
@@ -143,8 +148,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     GSList *args = NULL;
     struct term_options *to = NULL;
     guint args_i;
+    char option;
+    char *value;
 
     to = calloc(sizeof(struct term_options), 1);
+    to->title = __NAME__;
+    to->wm_class = __NAME_CAPITALIZED__;
+    to->wm_name = __NAME__;
     
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
     sz_read = g_input_stream_read(s, message, MSG_SIZE, NULL, NULL);
@@ -154,7 +164,29 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         switch (*p)
         {
             case 'O':
-                /* Set options. Not yet implemented. */
+                p++;
+                option = *p;
+                p++;
+                value = p;
+                if (option == 'c' || option == 'n' || option == 't')
+                {
+                    while (*p != 0 && (p - message) < sz_read)
+                        p++;
+                    if (*p != 0)
+                        *p = 0;
+
+                    if (option == 'c')
+                        to->wm_class = value;
+                    if (option == 'n')
+                        to->wm_name = value;
+                    if (option == 't')
+                        to->title = value;
+                }
+                else
+                {
+                    fprintf(stderr, __NAME__": Garbled options, aborting.\n");
+                    return TRUE;
+                }
                 break;
             case 'A':
                 /* After the 'A' follows a NUL terminated string. Add
@@ -218,7 +250,7 @@ term_new(gpointer user_data)
     struct term_options *to = (struct term_options *)user_data;
 
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    setup_window(win);
+    setup_window(win, to);
     term = vte_terminal_new();
     setup_term(win, term, to);
     gtk_container_add(GTK_CONTAINER(win), term);
