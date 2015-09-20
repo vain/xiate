@@ -20,6 +20,16 @@ struct term_options
 };
 
 
+static void child_exited(GObject *, GParamSpec *, gpointer);
+static void setup_css(void);
+static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
+static void setup_window(GtkWidget *);
+static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
+                              gpointer);
+static void socket_listen(char *);
+static gboolean term_new(gpointer);
+
+
 void
 child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
 {
@@ -29,6 +39,23 @@ child_exited(GObject *obj, GParamSpec *pspec, gpointer data)
     (void)pspec;
 
     gtk_widget_destroy(win);
+}
+
+void
+setup_css(void)
+{
+    /* Style provider for this screen. */
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GdkDisplay *display = gdk_display_get_default();
+    GdkScreen *screen = gdk_display_get_default_screen(display);
+
+    gtk_style_context_add_provider_for_screen(screen,
+            GTK_STYLE_PROVIDER(provider),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_css_provider_load_from_data(provider,
+                                    "GtkWindow { background-color: " BG_COLOR "; }",
+                                    -1, NULL);
+    g_object_unref(provider);
 }
 
 gboolean
@@ -72,46 +99,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 }
 
 void
-setup_css(void)
-{
-    /* Style provider for this screen. */
-    GtkCssProvider *provider = gtk_css_provider_new();
-    GdkDisplay *display = gdk_display_get_default();
-    GdkScreen *screen = gdk_display_get_default_screen(display);
-
-    gtk_style_context_add_provider_for_screen(screen,
-            GTK_STYLE_PROVIDER(provider),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    gtk_css_provider_load_from_data(provider,
-                                    "GtkWindow { background-color: " BG_COLOR "; }",
-                                    -1, NULL);
-    g_object_unref(provider);
-}
-
-void
 setup_window(GtkWidget *win)
 {
     g_signal_connect(G_OBJECT(win), "delete-event",
                      G_CALLBACK(gtk_main_quit), NULL);
-}
-
-gboolean
-term_new(gpointer user_data)
-{
-    GtkWidget *term, *win;
-    struct term_options *to = (struct term_options *)user_data;
-
-    win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    setup_window(win);
-    term = vte_terminal_new();
-    setup_term(win, term, to);
-    gtk_container_add(GTK_CONTAINER(win), term);
-    gtk_widget_show_all(win);
-
-    free(to);
-
-    /* Remove this source. */
-    return FALSE;
 }
 
 gboolean
@@ -194,6 +185,25 @@ socket_listen(char *suffix)
 
     g_signal_connect(G_OBJECT(sock), "run", G_CALLBACK(sock_incoming), NULL);
     g_socket_service_start(sock);
+}
+
+gboolean
+term_new(gpointer user_data)
+{
+    GtkWidget *term, *win;
+    struct term_options *to = (struct term_options *)user_data;
+
+    win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    setup_window(win);
+    term = vte_terminal_new();
+    setup_term(win, term, to);
+    gtk_container_add(GTK_CONTAINER(win), term);
+    gtk_widget_show_all(win);
+
+    free(to);
+
+    /* Remove this source. */
+    return FALSE;
 }
 
 int
