@@ -1,0 +1,46 @@
+.TH xinox 1 "2015-09-21" "xinox" "User Commands"
+.\" --------------------------------------------------------------------
+.SH NAME
+xinox \- terminal emulator (daemon)
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+\fBxinox\fP [\fIsuffix\fP]
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+\fBxinox\fP is the daemon component of xinox (\(lqxinox is not
+XTerm\(rq). This program must be run in order to actually launch
+terminal windows.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+\fBxinox\fP knows exactly one command line argument which is optional:
+.TP
+\fIsuffix\fP
+\fBxinox\fP creates a UNIX socket on which it listens for incoming
+connections. This socket is named \(lqxinox-\fIsuffix\fP\(rq.
+\fIsuffix\fP defaults to \fBmain\fP.
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.P
+.TP
+.B DISPLAY
+Points to the X11 display on which to open terminal windows.
+.TP
+.B XDG_RUNTIME_DIR
+Specifies the location of the UNIX socket.
+.\" --------------------------------------------------------------------
+.SH LICENSE
+\fBxinox\fP is released as \(lqPIZZA-WARE\(rq. See the accompanying
+\fILICENSE\fP file.
+.\" --------------------------------------------------------------------
+.SH HISTORY
+\fBxinox\fP was originally written by Peter Hofmann. The project was
+started in September 2015.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+See \fBxinoxc\fP(1) for the client.
+.P
+Other terminal emulators include:
+.BR sakura (1),
+.BR st (1),
+.BR urxvt (1),
+.BR xterm (1).
