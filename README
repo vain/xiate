@@ -6,7 +6,9 @@
 xinox is not XTerm.
 
 Instead, it's a terminal emulator which tries to keep a balance between
-"features" and "simplicity".
+"features" and "simplicity". This is achieved by using VTE as a powerful
+backend, while UI, configuration, and code try to remain much more
+minimalistic.
 
 
 Installation
@@ -49,3 +51,7 @@ launch a new terminal window and/or run a program:
 
     $ xinoxc
     $ xinoxc -e vim
+
+As you can see, though, by reading the source code, the protocol is not
+very hard to understand. This means you're not forced to use socat.
+Anything that can talk to a UNIX socket is a suitable client for xinox.
