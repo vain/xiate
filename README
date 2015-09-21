@@ -40,12 +40,12 @@ Running
 For various reasons, xinox is split into two components: A daemon and a
 client. You first start the daemon:
 
-    $ xinoxd
+    $ xinox
 
 It connects to the current X11 display (according to $DISPLAY), but does
 not create any windows yet. It also creates a UNIX socket and waits for
 connections. Using a simple protocol, you can instruct xinox to actually
 launch a new terminal window and/or run a program:
 
-    $ xinox
-    $ xinox -e vim
+    $ xinoxc
+    $ xinoxc -e vim
