@@ -1,8 +1,8 @@
-char *args_default[] = { "/bin/bash", "-l", "-i", NULL };
-gboolean enable_bold = FALSE;
-char *font_default = "Ttyp0 10";
-gint internal_border = 2;
-guint scrollback_lines = 50000;
+char     *args_default[]   = { "/bin/bash", "-l", "-i", NULL };
+gboolean  enable_bold      = FALSE;
+char     *font_default     = "Ttyp0 10";
+gint      internal_border  = 2;
+guint     scrollback_lines = 50000;
 
 char *c_cursor = "#00FF00";
 char *c_foreground = "#AAAAAA";
