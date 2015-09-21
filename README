@@ -1,14 +1,13 @@
                                  =====
-                                 xinox
+                                 xiate
                                  =====
 
 
-xinox is not XTerm.
+xiate is a terminal emulator.
 
-Instead, it's a terminal emulator which tries to keep a balance between
-"features" and "simplicity". This is achieved by using VTE as a powerful
-backend, while UI, configuration, and code try to remain much more
-minimalistic.
+It which tries to keep a balance between "features" and "simplicity".
+This is achieved by using VTE as a powerful backend, while UI,
+configuration, and code try to remain much more minimalistic.
 
 
 Installation
@@ -24,7 +23,7 @@ The following external tools are also required but kind of optional:
     - GNU bash
     - socat
 
-xinox expects to be run on a POSIX-ish operating system.
+xiate expects to be run on a POSIX-ish operating system.
 
 You can customize the program by creating your own config.h based on
 config.def.h. In any case, config.h must exist in order to build the
@@ -39,19 +38,19 @@ To build the program and install it to /usr/local:
 Running
 -------
 
-For various reasons, xinox is split into two components: A daemon and a
+For various reasons, xiate is split into two components: A daemon and a
 client. You first start the daemon:
 
-    $ xinox
+    $ xiate
 
 It connects to the current X11 display (according to $DISPLAY), but does
 not create any windows yet. It also creates a UNIX socket and waits for
-connections. Using a simple protocol, you can instruct xinox to actually
+connections. Using a simple protocol, you can instruct xiate to actually
 launch a new terminal window and/or run a program:
 
-    $ xinoxc
-    $ xinoxc -e vim
+    $ xiatec
+    $ xiatec -e vim
 
 As you can see, though, by reading the source code, the protocol is not
 very hard to understand. This means you're not forced to use socat.
-Anything that can talk to a UNIX socket is a suitable client for xinox.
+Anything that can talk to a UNIX socket is a suitable client for xiate.
