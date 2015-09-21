@@ -24,6 +24,7 @@ $(__NAME__): daemon.c config.h
 		-D__NAME__=\"$(__NAME__)\" \
 		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)\" \
 		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)\" \
+		-DSRVR_$$HOSTNAME \
 		-o $@ $< \
 		`pkg-config --cflags --libs gtk+-3.0 vte-2.91`
 
