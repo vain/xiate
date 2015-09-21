@@ -1,5 +1,5 @@
 CFLAGS += -Wall -Wextra -Wno-unused-parameter -O3
-__NAME__ = muted
+__NAME__ = xinoxd
 __NAME_UPPERCASE__ = `echo $(__NAME__) | sed 's/.*/\U&/'`
 __NAME_CAPITALIZED__ = `echo $(__NAME__) | sed 's/^./\U&\E/'`
 
