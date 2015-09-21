@@ -359,6 +359,9 @@ main(int argc, char **argv)
 {
     gtk_init(&argc, &argv);
     setup_css();
-    socket_listen("main");
+    if (argc == 2)
+        socket_listen(argv[1]);
+    else
+        socket_listen("main");
     gtk_main();
 }
