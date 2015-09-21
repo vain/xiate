@@ -336,6 +336,10 @@ term_new(gpointer user_data)
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     setup_window(win, to);
     term = vte_terminal_new();
+    gtk_widget_set_margin_start(term, internal_border);
+    gtk_widget_set_margin_end(term, internal_border);
+    gtk_widget_set_margin_top(term, internal_border);
+    gtk_widget_set_margin_bottom(term, internal_border);
     gtk_container_add(GTK_CONTAINER(win), term);
     gtk_widget_show_all(win);
     setup_term(win, term, to);
