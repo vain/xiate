@@ -53,4 +53,5 @@ done
             printf "A$i\000"
         done
     fi
-) | socat - UNIX:/var/run/user/$(id -u)/xiate-"$suffix",retry=10
+) | socat - UNIX:/var/run/user/$(id -u)/xiate-"$suffix",retry=10 \
+    >/dev/null 2>&1
