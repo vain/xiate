@@ -5,9 +5,9 @@
 
 xiate is a terminal emulator.
 
-It which tries to keep a balance between "features" and "simplicity".
-This is achieved by using VTE as a powerful backend, while UI,
-configuration, and code try to remain much more minimalistic.
+It tries to keep a balance between "features" and "simplicity". This is
+achieved by using VTE as a powerful backend, while UI, configuration,
+and code try to remain much more minimalistic.
 
 
 Installation
