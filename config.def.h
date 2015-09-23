@@ -28,7 +28,7 @@ guint scrollback_lines = 50000;
  * only alphanumeric characters will be considered as part of a word.
  * The following set of characters is meant to make selecting URLs a bit
  * easier. Can be set to NULL for the default behaviour. */
-char *word_chars = "-+_=#?&%:/.,";
+char *word_chars = "-+_=#?&%:/.,@";
 
 char *c_cursor = "#00FF00";
 char *c_foreground = "#AAAAAA";
