@@ -3,6 +3,7 @@ gboolean  enable_bold      = FALSE;
 char     *font_default     = "DejaVu Sans Mono 9";
 gint      internal_border  = 2;
 guint     scrollback_lines = 50000;
+char     *word_chars       = ":/.";
 
 char *c_cursor = "#00FF00";
 char *c_foreground = "#AAAAAA";
