@@ -87,11 +87,11 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Appearance. */
     font_desc = pango_font_description_from_string(font_default);
-    vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
-    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
-    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
+    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
+    vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
     vte_terminal_set_word_char_exceptions(VTE_TERMINAL(term), word_chars);
 
     gdk_rgba_parse(&c_cursor_gdk, c_cursor);
