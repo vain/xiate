@@ -30,6 +30,7 @@ static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void setup_window(GtkWidget *, struct term_options *);
 static void sig_bell(VteTerminal *, gpointer);
+static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_icon_title_changed(VteTerminal *, gpointer);
@@ -79,6 +80,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GdkRGBA c_background_gdk;
     GdkRGBA c_bold_gdk;
     GdkRGBA c_palette_gdk[16];
+    GRegex *url_gregex = NULL;
+    GError *err = NULL;
 
     if (to->argv != NULL)
         args_use = to->argv;
@@ -92,7 +95,6 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
-    vte_terminal_set_word_char_exceptions(VTE_TERMINAL(term), word_chars);
 
     gdk_rgba_parse(&c_cursor_gdk, c_cursor);
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
@@ -105,9 +107,20 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_bold_gdk);
     vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
 
+    url_gregex = g_regex_new(url_regex, G_REGEX_CASELESS, 0, &err);
+    if (url_gregex == NULL)
+        fprintf(stderr, "url_regex: %s\n", err->message);
+    else
+    {
+        vte_terminal_match_add_gregex(VTE_TERMINAL(term), url_gregex, 0);
+        g_regex_unref(url_gregex);
+    }
+
     /* Signals. */
     g_signal_connect(G_OBJECT(term), "bell",
                      G_CALLBACK(sig_bell), win);
+    g_signal_connect(G_OBJECT(term), "button-press-event",
+                     G_CALLBACK(sig_button_press), NULL);
     if (!to->hold)
         g_signal_connect(G_OBJECT(term), "child-exited",
                          G_CALLBACK(sig_child_exited), win);
@@ -145,6 +158,31 @@ sig_bell(VteTerminal *term, gpointer data)
      */
     gtk_window_set_urgency_hint(GTK_WINDOW(win), FALSE);
     gtk_window_set_urgency_hint(GTK_WINDOW(win), TRUE);
+}
+
+gboolean
+sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+    GtkClipboard *clip = NULL;
+    char *url = NULL;
+
+    if (event->type == GDK_BUTTON_PRESS)
+    {
+        if (((GdkEventButton *)event)->button == 3)
+        {
+            clip = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+            url = vte_terminal_match_check_event(VTE_TERMINAL(widget),
+                                                 event, NULL);
+            if (url != NULL)
+            {
+                if (clip != NULL)
+                    gtk_clipboard_set_text(clip, url, -1);
+                g_free(url);
+            }
+        }
+    }
+
+    return FALSE;
 }
 
 void

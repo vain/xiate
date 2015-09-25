@@ -24,11 +24,10 @@ gint internal_border = 2;
  * infinite scrolling. Keep the memory footprint in mind, though. */
 guint scrollback_lines = 50000;
 
-/* When double clicking, the terminal will select a "word". By default,
- * only alphanumeric characters will be considered as part of a word.
- * The following set of characters is meant to make selecting URLs a bit
- * easier. Can be set to NULL for the default behaviour. */
-char *word_chars = "-!\"#$%&'()*+,./:;<=>?@\\]^_`{|}~";
+/* This regular expression is used to match URLs. You can easily spot
+ * them by hovering over them with your mouse. Use your right mouse
+ * button to copy the URL to your clipboard. */
+char *url_regex = "[a-z]+://[[:graph:]]+";
 
 char *c_cursor = "#00FF00";
 char *c_foreground = "#AAAAAA";
