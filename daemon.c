@@ -149,6 +149,8 @@ sig_bell(VteTerminal *term, gpointer data)
 {
     GtkWidget *win = (GtkWidget *)data;
 
+    (void)term;
+
     /* Credits go to sakura. The author says:
      * Remove the urgency hint. This is necessary to signal the window
      * manager that a new urgent event happened when the urgent hint is
@@ -163,6 +165,8 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     GtkClipboard *clip = NULL;
     char *url = NULL;
+
+    (void)data;
 
     if (event->type == GDK_BUTTON_PRESS)
     {
@@ -188,14 +192,20 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
     GtkWidget *win = (GtkWidget *)data;
 
+    (void)status;
+    (void)term;
+
     gtk_widget_destroy(win);
 }
 
 void
 sig_decrease_font_size(VteTerminal *term, gpointer data)
 {
-    PangoFontDescription *f = pango_font_description_copy(
-            vte_terminal_get_font(term));
+    PangoFontDescription *f;
+
+    (void)data;
+
+    f = pango_font_description_copy(vte_terminal_get_font(term));
     gint sz = pango_font_description_get_size(f);
     sz -= PANGO_SCALE;
     sz = sz <= 0 ? 1 : sz;
@@ -215,8 +225,11 @@ sig_icon_title_changed(VteTerminal *term, gpointer data)
 void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
-    PangoFontDescription *f = pango_font_description_copy(
-            vte_terminal_get_font(term));
+    PangoFontDescription *f;
+
+    (void)data;
+
+    f = pango_font_description_copy(vte_terminal_get_font(term));
     gint sz = pango_font_description_get_size(f);
     sz += PANGO_SCALE;
     pango_font_description_set_size(f, sz);
@@ -228,6 +241,8 @@ gboolean
 sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     VteTerminal *term = VTE_TERMINAL(widget);
+
+    (void)data;
 
     if (((GdkEventKey *)event)->state & GDK_CONTROL_MASK)
     {
@@ -257,6 +272,10 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     guint args_i;
     char option;
     char *value;
+
+    (void)data;
+    (void)service;
+    (void)source_object;
 
     to = calloc(sizeof(struct term_options), 1);
     to->cwd = NULL;
