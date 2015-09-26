@@ -12,8 +12,6 @@
 #include "config.h"
 
 
-#define MSG_SIZE 4096
-
 struct term_options
 {
     char **argv;
@@ -251,9 +249,9 @@ gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer user_data)
 {
-    gchar *p;
     GInputStream* s;
-    gssize sz_read;
+    gssize i, sz_read;
+    gsize msg_size = 4096;
     GSList *args = NULL;
     struct term_options *to = NULL;
     guint args_i;
@@ -263,44 +261,67 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     to = calloc(sizeof(struct term_options), 1);
     to->cwd = NULL;
     to->hold = FALSE;
-    to->message = calloc(1, MSG_SIZE);
+    to->message = calloc(1, msg_size);
     to->title = __NAME__;
     to->wm_class = __NAME_CAPITALIZED__;
     to->wm_name = __NAME__;
-    
-    s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-    sz_read = g_input_stream_read(s, to->message, MSG_SIZE, NULL, NULL);
 
-    for (p = to->message; (p - to->message) < sz_read; p++)
+    s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
+    sz_read = g_input_stream_read(s, to->message, msg_size, NULL, NULL);
+
+    if (sz_read < 1)
+        goto garbled;
+
+    for (i = 0; i < sz_read; i++)
     {
-        switch (*p)
+        switch (to->message[i])
         {
             case 'A':
                 /* After the 'A' follows a NUL terminated string. Add
                  * this string to our list of arguments. */
-                p++;
-                args = g_slist_append(args, p);
-                /* Jump over the string. */
-                while (*p != 0 && (p - to->message) < sz_read)
-                    p++;
+                i++;
+                if (i >= sz_read)
+                    goto garbled;
+                args = g_slist_append(args, &to->message[i]);
+
+                /* Jump to the NUL byte of the string, so that the next
+                 * iteration of the outer for-loop will jump to the next
+                 * byte after that NUL. */
+                while (i < sz_read && to->message[i] != 0)
+                    i++;
+                if (i == sz_read)
+                    goto garbled;
+
                 break;
+
             case 'H':
                 to->hold = TRUE;
                 break;
+
             case 'O':
-                /* FIXME: Inner "p++" statements like these don't check
-                 * if they have exceeded the buffer. */
-                p++;
-                option = *p;
-                p++;
-                value = p;
+                /* Directly after the 'O' follows another byte that
+                 * indicates which option to set. After that, a NUL
+                 * terminated string follows. */
+                i++;
+                if (i >= sz_read)
+                    goto garbled;
+                option = to->message[i];
+
+                i++;
+                if (i >= sz_read)
+                    goto garbled;
+                value = &to->message[i];
+
                 if (option == 'C' || option == 'c' || option == 'n' ||
                     option == 't')
                 {
-                    while (*p != 0 && (p - to->message) < sz_read)
-                        p++;
-                    if (*p != 0)
-                        *p = 0;
+                    /* Jump to the NUL byte of the string, so that the
+                     * next iteration of the outer for-loop will jump to
+                     * the next byte after that NUL. */
+                    while (i < sz_read && to->message[i] != 0)
+                        i++;
+                    if (i == sz_read)
+                        goto garbled;
 
                     if (option == 'C')
                         to->cwd = value;
@@ -312,14 +333,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                         to->title = value;
                 }
                 else
-                {
-                    fprintf(stderr, __NAME__": Garbled options, aborting.\n");
-                    g_slist_free(args);
-                    free(to->message);
-                    free(to);
-                    return TRUE;
-                }
+                    goto garbled;
+
                 break;
+
+            default:
+                goto garbled;
         }
     }
 
@@ -335,6 +354,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     g_main_context_invoke(NULL, term_new, to);
 
     /* Other handlers must not be called. */
+    return TRUE;
+
+garbled:
+    fprintf(stderr, __NAME__": Garbled message, aborting.\n");
+    g_slist_free(args);
+    free(to->message);
+    free(to);
     return TRUE;
 }
 
