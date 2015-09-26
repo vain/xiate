@@ -247,7 +247,7 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 
 gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
-              GObject *source_object, gpointer user_data)
+              GObject *source_object, gpointer data)
 {
     GInputStream* s;
     gssize i, sz_read;
@@ -394,10 +394,10 @@ socket_listen(char *suffix)
 }
 
 gboolean
-term_new(gpointer user_data)
+term_new(gpointer data)
 {
     GtkWidget *term, *win;
-    struct term_options *to = (struct term_options *)user_data;
+    struct term_options *to = (struct term_options *)data;
 
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     setup_window(win, to);
