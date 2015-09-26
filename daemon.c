@@ -408,7 +408,8 @@ term_new(gpointer user_data)
     gtk_widget_set_margin_bottom(term, internal_border);
     gtk_container_add(GTK_CONTAINER(win), term);
     gtk_widget_show_all(win);
-    setup_term(win, term, to);
+    if (!setup_term(win, term, to))
+        gtk_widget_destroy(win);
 
     if (to->argv != NULL)
         free(to->argv);
