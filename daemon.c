@@ -314,8 +314,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 else
                 {
                     fprintf(stderr, __NAME__": Garbled options, aborting.\n");
-                    if (to->argv != NULL)
-                        free(to->argv);
+                    g_slist_free(args);
                     free(to->message);
                     free(to);
                     return TRUE;
@@ -330,6 +329,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         for (args_i = 0; args_i < g_slist_length(args); args_i++)
             to->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
     }
+    g_slist_free(args);
 
     /* We're not on the main thread. */
     g_main_context_invoke(NULL, term_new, to);
