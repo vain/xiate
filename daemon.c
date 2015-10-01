@@ -201,17 +201,13 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
 void
 sig_decrease_font_size(VteTerminal *term, gpointer data)
 {
-    PangoFontDescription *f;
+    gdouble s;
 
     (void)data;
 
-    f = pango_font_description_copy(vte_terminal_get_font(term));
-    gint sz = pango_font_description_get_size(f);
-    sz -= PANGO_SCALE;
-    sz = sz <= 0 ? 1 : sz;
-    pango_font_description_set_size(f, sz);
-    vte_terminal_set_font(term, f);
-    pango_font_description_free(f);
+    s = vte_terminal_get_font_scale(term);
+    s /= 1.1;
+    vte_terminal_set_font_scale(term, s);
 }
 
 void
@@ -225,16 +221,13 @@ sig_icon_title_changed(VteTerminal *term, gpointer data)
 void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
-    PangoFontDescription *f;
+    gdouble s;
 
     (void)data;
 
-    f = pango_font_description_copy(vte_terminal_get_font(term));
-    gint sz = pango_font_description_get_size(f);
-    sz += PANGO_SCALE;
-    pango_font_description_set_size(f, sz);
-    vte_terminal_set_font(term, f);
-    pango_font_description_free(f);
+    s = vte_terminal_get_font_scale(term);
+    s *= 1.1;
+    vte_terminal_set_font_scale(term, s);
 }
 
 gboolean
