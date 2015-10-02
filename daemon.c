@@ -73,11 +73,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     char **args_use;
     PangoFontDescription *font_desc = NULL;
     size_t i;
-    GdkRGBA c_cursor_gdk;
     GdkRGBA c_foreground_gdk;
     GdkRGBA c_background_gdk;
-    GdkRGBA c_bold_gdk;
     GdkRGBA c_palette_gdk[16];
+    GdkRGBA c_gdk;
     GRegex *url_gregex = NULL;
     GError *err = NULL;
 
@@ -94,16 +93,24 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
-    gdk_rgba_parse(&c_cursor_gdk, c_cursor);
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
-    gdk_rgba_parse(&c_bold_gdk, c_bold);
     for (i = 0; i < 16; i++)
         gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
     vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk,
                             &c_background_gdk, c_palette_gdk, 16);
-    vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_bold_gdk);
-    vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_cursor_gdk);
+
+    if (c_bold != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_bold);
+        vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_gdk);
+    }
+
+    if (c_cursor != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_cursor);
+        vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
+    }
 
     url_gregex = g_regex_new(url_regex, G_REGEX_CASELESS, 0, &err);
     if (url_gregex == NULL)
