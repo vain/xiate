@@ -30,6 +30,7 @@ $(__NAME__): daemon.c config.h
 
 install: $(__NAME__) installdirs
 	$(INSTALL_PROGRAM) $(__NAME__) $(DESTDIR)$(bindir)/$(__NAME__)
+	$(INSTALL_PROGRAM) $(__NAME__)c $(DESTDIR)$(bindir)/$(__NAME__)c
 	$(INSTALL_DATA) man1/$(__NAME__).1 $(DESTDIR)$(man1dir)/$(__NAME__).1
 	$(INSTALL_DATA) man1/$(__NAME__)c.1 $(DESTDIR)$(man1dir)/$(__NAME__)c.1
 
