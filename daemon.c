@@ -90,6 +90,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
+    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                               GTK_WINDOW(win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
