@@ -94,6 +94,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                                                GTK_WINDOW(win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
+    pango_font_description_free(font_desc);
 
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
