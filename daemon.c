@@ -43,25 +43,25 @@ static gboolean term_new(gpointer);
 void
 setup_css(void)
 {
-    /* GTK3 and VTE are products of ~2015 and, as such, require a
-     * significant amount of computing power. On "slower" machines (even
-     * on fast ones), this can result in flickering: First, the window
-     * and its background is drawn, then the VTE widget is drawn. If the
-     * window has a bright background, it's likely to be visible for a
-     * short period of time -- a short "flash". This effect can be seen
-     * in other VTE terminals, too.
-     *
-     * By setting the background color of the window to something close
-     * to the terminals background, we can reduce this effect. */
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
     GdkScreen *screen = gdk_display_get_default_screen(display);
     gchar *css;
 
-    css = g_strdup_printf("GtkWindow { background-color: %s; }", c_background);
+    /* Setting the window's background color reduces flickering on some
+     * machines. */
+    css = g_strdup_printf("GtkWindow {"
+                          "    background-color: %s;"
+                          "}"
+                          "VteTerminal {"
+                          "    padding: %dpx;"
+                          "}", c_background, internal_border);
+
+    /* We need to use a priority higher than *_APPLICATION because VTE
+     * internally also adds a provider with exactly that priority. */
     gtk_style_context_add_provider_for_screen(screen,
             GTK_STYLE_PROVIDER(provider),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
     gtk_css_provider_load_from_data(provider, css, -1, NULL);
     g_object_unref(provider);
     g_free(css);
@@ -427,10 +427,6 @@ term_new(gpointer data)
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     setup_window(win, to);
     term = vte_terminal_new();
-    gtk_widget_set_margin_start(term, internal_border);
-    gtk_widget_set_margin_end(term, internal_border);
-    gtk_widget_set_margin_top(term, internal_border);
-    gtk_widget_set_margin_bottom(term, internal_border);
     gtk_container_add(GTK_CONTAINER(win), term);
     gtk_widget_show_all(win);
     if (!setup_term(win, term, to))
