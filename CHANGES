@@ -1,0 +1,16 @@
+Release history for xiate
+
+next
+  [Fixed]
+  - Set geometry hints on terminal windows. Newly created floating
+    windows now have the correct size.
+
+  [Changed]
+  - Makefile also installs the default client.
+  - Use CSS to set the "internal border". This results in the actual
+    border being one pixel smaller than before.
+  - xiate now expects at least VTE version 0.42.
+
+v15.10  2015-10-04
+  - This is the initial release of xiate.
+  - Daemon, client, manpages.
