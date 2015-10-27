@@ -9,6 +9,8 @@ next
   - Makefile also installs the default client.
   - Use CSS to set the "internal border". This results in the actual
     border being one pixel smaller than before.
+  - "args_default" has been replaced by the boolean option
+    "login_shell". We now autodetect your shell.
   - xiate now expects at least VTE version 0.42.
 
 v15.10  2015-10-04

@@ -70,7 +70,9 @@ setup_css(void)
 gboolean
 setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
+    static char *args_default[] = { NULL, NULL, NULL };
     char **args_use;
+    char *shell;
     PangoFontDescription *font_desc = NULL;
     size_t i;
     GdkRGBA c_foreground_gdk;
@@ -79,11 +81,29 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GdkRGBA c_gdk;
     GRegex *url_gregex = NULL;
     GError *err = NULL;
+    GSpawnFlags spawn_flags;
 
     if (to->argv != NULL)
+    {
         args_use = to->argv;
+        spawn_flags = G_SPAWN_SEARCH_PATH;
+    }
     else
+    {
+        if (args_default[0] == NULL)
+        {
+            shell = vte_get_user_shell();
+            if (shell == NULL)
+                shell = "/bin/sh";
+            args_default[0] = shell;
+            if (login_shell)
+                args_default[1] = g_strdup_printf("-%s", shell);
+            else
+                args_default[1] = shell;
+        }
         args_use = args_default;
+        spawn_flags = G_SPAWN_SEARCH_PATH | G_SPAWN_FILE_AND_ARGV_ZERO;
+    }
 
     /* Appearance. */
     font_desc = pango_font_description_from_string(font_default);
@@ -143,8 +163,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Spawn child. */
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
-                                   args_use, NULL, G_SPAWN_SEARCH_PATH, NULL,
-                                   NULL, NULL, NULL, NULL);
+                                   args_use, NULL, spawn_flags,
+                                   NULL, NULL, NULL, NULL, NULL);
 }
 
 void

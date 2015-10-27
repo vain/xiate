@@ -1,9 +1,7 @@
 /* If no other argument vector is specified via the UNIX socket, then a
- * newly created terminal window will launch this process. Note that
- * this is not the same type of vector as is used for the exec() system
- * calls -- especially, you can't tell a shell to be a login shell by
- * using "-sh" or "-bash" as argv[0]. */
-char *args_default[] = { "/bin/bash", "-l", "-i", NULL };
+ * newly created terminal window will launch the user's shell. This
+ * option specifies whether the shell will be a login shell or not. */
+gboolean login_shell = TRUE;
 
 /* Whether or not to enable the usage of bold fonts. See also c_bold,
  * which is always used for bold text with the default color, regardless
