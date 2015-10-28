@@ -72,7 +72,6 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
     static char *args_default[] = { NULL, NULL, NULL };
     char **args_use;
-    char *shell;
     PangoFontDescription *font_desc = NULL;
     size_t i;
     GdkRGBA c_foreground_gdk;
@@ -92,14 +91,13 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     {
         if (args_default[0] == NULL)
         {
-            shell = vte_get_user_shell();
-            if (shell == NULL)
-                shell = "/bin/sh";
-            args_default[0] = shell;
+            args_default[0] = vte_get_user_shell();
+            if (args_default[0] == NULL)
+                args_default[0] = "/bin/sh";
             if (login_shell)
-                args_default[1] = g_strdup_printf("-%s", shell);
+                args_default[1] = g_strdup_printf("-%s", args_default[0]);
             else
-                args_default[1] = shell;
+                args_default[1] = args_default[0];
         }
         args_use = args_default;
         spawn_flags = G_SPAWN_SEARCH_PATH | G_SPAWN_FILE_AND_ARGV_ZERO;
