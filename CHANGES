@@ -2,8 +2,8 @@ Release history for xiate
 
 next
   [Fixed]
-  - Set geometry hints on terminal windows. Newly created floating
-    windows now have the correct size.
+  - Improve window size of newly created floating windows: Set geometry
+    hints and use the correct font.
 
   [Changed]
   - Makefile also installs the default client.

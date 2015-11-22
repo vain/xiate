@@ -105,14 +105,16 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Appearance. */
     font_desc = pango_font_description_from_string(font_default);
+    vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
+    pango_font_description_free(font_desc);
+    gtk_widget_show_all(win);
+
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
-    vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
     vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
                                                GTK_WINDOW(win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
-    pango_font_description_free(font_desc);
 
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
@@ -446,7 +448,6 @@ term_new(gpointer data)
     setup_window(win, to);
     term = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(win), term);
-    gtk_widget_show_all(win);
     if (!setup_term(win, term, to))
         gtk_widget_destroy(win);
 
