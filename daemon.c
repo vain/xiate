@@ -31,9 +31,9 @@ static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
-static void sig_icon_title_changed(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
 static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
+static void sig_window_title_changed(VteTerminal *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
@@ -154,12 +154,12 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                          G_CALLBACK(sig_child_exited), win);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), NULL);
-    g_signal_connect(G_OBJECT(term), "icon-title-changed",
-                     G_CALLBACK(sig_icon_title_changed), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), NULL);
     g_signal_connect(G_OBJECT(term), "key-press-event",
                      G_CALLBACK(sig_key_press), NULL);
+    g_signal_connect(G_OBJECT(term), "window-title-changed",
+                     G_CALLBACK(sig_window_title_changed), win);
 
     /* Spawn child. */
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
@@ -241,14 +241,6 @@ sig_decrease_font_size(VteTerminal *term, gpointer data)
 }
 
 void
-sig_icon_title_changed(VteTerminal *term, gpointer data)
-{
-    GtkWidget *win = (GtkWidget *)data;
-
-    gtk_window_set_title(GTK_WINDOW(win), vte_terminal_get_icon_title(term));
-}
-
-void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
     gdouble s;
@@ -284,6 +276,14 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     }
 
     return FALSE;
+}
+
+void
+sig_window_title_changed(VteTerminal *term, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+
+    gtk_window_set_title(GTK_WINDOW(win), vte_terminal_get_window_title(term));
 }
 
 gboolean
