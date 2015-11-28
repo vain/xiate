@@ -26,7 +26,6 @@ struct term_options
 
 static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
-static void setup_window(GtkWidget *, struct term_options *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
@@ -165,13 +164,6 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
                                    args_use, NULL, spawn_flags,
                                    NULL, NULL, NULL, NULL, NULL);
-}
-
-void
-setup_window(GtkWidget *win, struct term_options *to)
-{
-    gtk_window_set_title(GTK_WINDOW(win), to->title);
-    gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
 }
 
 void
@@ -445,7 +437,9 @@ term_new(gpointer data)
     struct term_options *to = (struct term_options *)data;
 
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    setup_window(win, to);
+    gtk_window_set_title(GTK_WINDOW(win), to->title);
+    gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
+
     term = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(win), term);
     if (!setup_term(win, term, to))
