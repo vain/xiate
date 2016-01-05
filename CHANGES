@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v16.01  2016-01-05
   [Fixed]
   - Properly set X11 window title on the child application's request.
     Changing icon names is no longer officially supported, though.
