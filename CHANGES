@@ -1,5 +1,8 @@
 Release history for xiate
 
+next
+  - Update for slightly new VTE API.
+
 v16.01  2016-01-05
   [Fixed]
   - Properly set X11 window title on the child application's request.

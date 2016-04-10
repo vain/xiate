@@ -134,7 +134,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
     }
 
-    url_gregex = g_regex_new(url_regex, G_REGEX_CASELESS, 0, &err);
+    url_gregex = g_regex_new(url_regex,
+                             G_REGEX_CASELESS | G_REGEX_MULTILINE, 0, &err);
     if (url_gregex == NULL)
         fprintf(stderr, "url_regex: %s\n", err->message);
     else
