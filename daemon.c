@@ -52,7 +52,7 @@ setup_css(void)
     css = g_strdup_printf("GtkWindow {"
                           "    background-color: %s;"
                           "}"
-                          "VteTerminal {"
+                          "vte-terminal {"
                           "    padding: %dpx;"
                           "}", c_background, internal_border);
 
