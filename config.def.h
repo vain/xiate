@@ -14,10 +14,6 @@ gboolean enable_bold = TRUE;
  */
 char *font_default = "DejaVu Sans Mono 9";
 
-/* This is the number of pixels that will be used as padding between the
- * terminal widget and the window border. */
-gint internal_border = 1;
-
 /* Use 0 to disable scrolling completely or a negative value for
  * infinite scrolling. Keep the memory footprint in mind, though. */
 guint scrollback_lines = 50000;

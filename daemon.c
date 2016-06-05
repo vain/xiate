@@ -24,7 +24,6 @@ struct term_options
 };
 
 
-static void setup_css(void);
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
@@ -38,33 +37,6 @@ static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
 
-
-void
-setup_css(void)
-{
-    GtkCssProvider *provider = gtk_css_provider_new();
-    GdkDisplay *display = gdk_display_get_default();
-    GdkScreen *screen = gdk_display_get_default_screen(display);
-    gchar *css;
-
-    /* Setting the window's background color reduces flickering on some
-     * machines. */
-    css = g_strdup_printf("GtkWindow {"
-                          "    background-color: %s;"
-                          "}"
-                          "vte-terminal {"
-                          "    padding: %dpx;"
-                          "}", c_background, internal_border);
-
-    /* We need to use a priority higher than *_APPLICATION because VTE
-     * internally also adds a provider with exactly that priority. */
-    gtk_style_context_add_provider_for_screen(screen,
-            GTK_STYLE_PROVIDER(provider),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-    gtk_css_provider_load_from_data(provider, css, -1, NULL);
-    g_object_unref(provider);
-    g_free(css);
-}
 
 gboolean
 setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
@@ -459,7 +431,6 @@ int
 main(int argc, char **argv)
 {
     gtk_init(&argc, &argv);
-    setup_css();
     if (argc == 2)
         socket_listen(argv[1]);
     else

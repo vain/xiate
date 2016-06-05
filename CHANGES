@@ -1,5 +1,18 @@
 Release history for xiate
 
+next
+  [Changed]
+  - Don't try to reduce flickering by setting the GtkWindow's background
+    color anymore. This issue appears to have resolved itself (other VTE
+    terminals are fine, too).
+  - 'internal_border' has been removed from config.h. If you really want
+    to use an internal border, put this in your
+    ~/.config/gtk-3.0/gtk.css:
+
+        vte-terminal {
+            padding: 30px;
+        }
+
 v16.05  2016-05-03
   - Update for slightly new VTE API.
 
