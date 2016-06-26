@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v16.06  2016-06-26
   [Changed]
   - Don't try to reduce flickering by setting the GtkWindow's background
     color anymore. This issue appears to have resolved itself (other VTE
