@@ -23,12 +23,14 @@ guint scrollback_lines = 50000;
  * button to copy the URL to your clipboard. */
 char *url_regex = "[a-z]+://[[:graph:]]+";
 
-/* Background color of text under the cursor. Note that you can't change
- * the foreground color; it'll stay at whatever color is requested by
- * escape codes. You can, however, set this option to NULL, to use a
- * different mode: "If NULL, text under the cursor will be drawn with
- * foreground and background colors reversed." */
+/* Background color of text under the cursor. There's a special mode:
+ * "If NULL, text under the cursor will be drawn with foreground and
+ * background colors reversed." */
 char *c_cursor = "#00FF00";
+
+/* Foreground color of text under the cursor. Just like the background
+ * color, NULL reverses foreground and background. */
+char *c_cursor_foreground = "#000000";
 
 /* Quoting from the VTE reference: "Sets the color used to draw bold
  * text in the default foreground color. If [...] NULL then the default

@@ -106,6 +106,12 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
     }
 
+    if (c_cursor_foreground != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_cursor_foreground);
+        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
+    }
+
     url_gregex = g_regex_new(url_regex,
                              G_REGEX_CASELESS | G_REGEX_MULTILINE, 0, &err);
     if (url_gregex == NULL)

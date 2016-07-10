@@ -1,5 +1,9 @@
 Release history for xiate
 
+next
+  [Added]
+  - Foreground color of text under the cursor can be customized.
+
 v16.06  2016-06-26
   [Changed]
   - Don't try to reduce flickering by setting the GtkWindow's background
