@@ -36,14 +36,31 @@ static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
+static void term_setfont(VteTerminal *, size_t);
 
+
+void
+term_setfont(VteTerminal *term, size_t index)
+{
+    PangoFontDescription *font_desc = NULL;
+
+    if (index >= sizeof fonts / sizeof fonts[0])
+    {
+        fprintf(stderr, __NAME__": Warning: Invalid font index\n");
+        return;
+    }
+
+    font_desc = pango_font_description_from_string(fonts[index]);
+    vte_terminal_set_font(term, font_desc);
+    pango_font_description_free(font_desc);
+    vte_terminal_set_font_scale(term, 1);
+}
 
 gboolean
 setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
     static char *args_default[] = { NULL, NULL, NULL };
     char **args_use;
-    PangoFontDescription *font_desc = NULL;
     size_t i;
     GdkRGBA c_foreground_gdk;
     GdkRGBA c_background_gdk;
@@ -75,9 +92,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     }
 
     /* Appearance. */
-    font_desc = pango_font_description_from_string(font_default);
-    vte_terminal_set_font(VTE_TERMINAL(term), font_desc);
-    pango_font_description_free(font_desc);
+    term_setfont(VTE_TERMINAL(term), 0);
     gtk_widget_show_all(win);
 
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
@@ -243,6 +258,16 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
             case GDK_KEY_KP_0:
                 vte_terminal_set_font_scale(term, 1);
                 return TRUE;
+
+            case GDK_KEY_KP_1: term_setfont(term, 0); return TRUE;
+            case GDK_KEY_KP_2: term_setfont(term, 1); return TRUE;
+            case GDK_KEY_KP_3: term_setfont(term, 2); return TRUE;
+            case GDK_KEY_KP_4: term_setfont(term, 3); return TRUE;
+            case GDK_KEY_KP_5: term_setfont(term, 4); return TRUE;
+            case GDK_KEY_KP_6: term_setfont(term, 5); return TRUE;
+            case GDK_KEY_KP_7: term_setfont(term, 6); return TRUE;
+            case GDK_KEY_KP_8: term_setfont(term, 7); return TRUE;
+            case GDK_KEY_KP_9: term_setfont(term, 8); return TRUE;
         }
     }
 

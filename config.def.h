@@ -8,11 +8,20 @@ gboolean login_shell = TRUE;
  * of this setting. */
 gboolean enable_bold = TRUE;
 
-/* Default font and font size. This string will be parsed by pango, see
- * the following URL:
+/* Default fonts and font sizes. These strings will be parsed by pango,
+ * see the following URL:
  * https://developer.gnome.org/pango/stable/pango-Fonts.html#pango-font-description-from-string
+ *
+ * You can define up to 9 fonts, at least one font must be defined. You
+ * can switch between these fonts during runtime using Ctrl+Keypad$n.
+ * The first font will be index 0 and can be activated using
+ * Ctrl+Keypad1. Second one with Ctrl+Keypad2 and so on.
  */
-char *font_default = "DejaVu Sans Mono 9";
+char *fonts[] = {
+    "qsqs,Ttyp0 10",
+    "VGA 12",
+    "Terminus 12",
+};
 
 /* Use 0 to disable scrolling completely or a negative value for
  * infinite scrolling. Keep the memory footprint in mind, though. */
