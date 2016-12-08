@@ -1,5 +1,9 @@
 Release history for xiate
 
+next
+  [Changed]
+  - Update geometry hints when changing font or font size.
+
 v16.10  2016-10-29
   [Changed]
   - Multiple fonts can be specified and you can switch during runtime.

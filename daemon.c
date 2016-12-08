@@ -36,11 +36,11 @@ static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
-static void term_setfont(VteTerminal *, size_t);
+static void term_setfont(GtkWidget *, VteTerminal *, size_t);
 
 
 void
-term_setfont(VteTerminal *term, size_t index)
+term_setfont(GtkWidget *win, VteTerminal *term, size_t index)
 {
     PangoFontDescription *font_desc = NULL;
 
@@ -54,6 +54,10 @@ term_setfont(VteTerminal *term, size_t index)
     vte_terminal_set_font(term, font_desc);
     pango_font_description_free(font_desc);
     vte_terminal_set_font_scale(term, 1);
+
+    if (win != NULL)
+        vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                                   GTK_WINDOW(win));
 }
 
 gboolean
@@ -92,7 +96,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     }
 
     /* Appearance. */
-    term_setfont(VTE_TERMINAL(term), 0);
+    term_setfont(NULL, VTE_TERMINAL(term), 0);
     gtk_widget_show_all(win);
 
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
@@ -146,11 +150,11 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         g_signal_connect(G_OBJECT(term), "child-exited",
                          G_CALLBACK(sig_child_exited), win);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
-                     G_CALLBACK(sig_decrease_font_size), NULL);
+                     G_CALLBACK(sig_decrease_font_size), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
-                     G_CALLBACK(sig_increase_font_size), NULL);
+                     G_CALLBACK(sig_increase_font_size), win);
     g_signal_connect(G_OBJECT(term), "key-press-event",
-                     G_CALLBACK(sig_key_press), NULL);
+                     G_CALLBACK(sig_key_press), win);
     g_signal_connect(G_OBJECT(term), "window-title-changed",
                      G_CALLBACK(sig_window_title_changed), win);
 
@@ -217,33 +221,34 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
 void
 sig_decrease_font_size(VteTerminal *term, gpointer data)
 {
+    GtkWidget *win = (GtkWidget *)data;
     gdouble s;
-
-    (void)data;
 
     s = vte_terminal_get_font_scale(term);
     s /= 1.1;
     vte_terminal_set_font_scale(term, s);
+    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                               GTK_WINDOW(win));
 }
 
 void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
+    GtkWidget *win = (GtkWidget *)data;
     gdouble s;
-
-    (void)data;
 
     s = vte_terminal_get_font_scale(term);
     s *= 1.1;
     vte_terminal_set_font_scale(term, s);
+    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                               GTK_WINDOW(win));
 }
 
 gboolean
 sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     VteTerminal *term = VTE_TERMINAL(widget);
-
-    (void)data;
+    GtkWidget *win = (GtkWidget *)data;
 
     if (((GdkEventKey *)event)->state & GDK_CONTROL_MASK)
     {
@@ -257,17 +262,19 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                 return TRUE;
             case GDK_KEY_KP_0:
                 vte_terminal_set_font_scale(term, 1);
+                vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                                           GTK_WINDOW(win));
                 return TRUE;
 
-            case GDK_KEY_KP_1: term_setfont(term, 0); return TRUE;
-            case GDK_KEY_KP_2: term_setfont(term, 1); return TRUE;
-            case GDK_KEY_KP_3: term_setfont(term, 2); return TRUE;
-            case GDK_KEY_KP_4: term_setfont(term, 3); return TRUE;
-            case GDK_KEY_KP_5: term_setfont(term, 4); return TRUE;
-            case GDK_KEY_KP_6: term_setfont(term, 5); return TRUE;
-            case GDK_KEY_KP_7: term_setfont(term, 6); return TRUE;
-            case GDK_KEY_KP_8: term_setfont(term, 7); return TRUE;
-            case GDK_KEY_KP_9: term_setfont(term, 8); return TRUE;
+            case GDK_KEY_KP_1: term_setfont(win, term, 0); return TRUE;
+            case GDK_KEY_KP_2: term_setfont(win, term, 1); return TRUE;
+            case GDK_KEY_KP_3: term_setfont(win, term, 2); return TRUE;
+            case GDK_KEY_KP_4: term_setfont(win, term, 3); return TRUE;
+            case GDK_KEY_KP_5: term_setfont(win, term, 4); return TRUE;
+            case GDK_KEY_KP_6: term_setfont(win, term, 5); return TRUE;
+            case GDK_KEY_KP_7: term_setfont(win, term, 6); return TRUE;
+            case GDK_KEY_KP_8: term_setfont(win, term, 7); return TRUE;
+            case GDK_KEY_KP_9: term_setfont(win, term, 8); return TRUE;
         }
     }
 
