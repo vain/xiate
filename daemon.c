@@ -36,11 +36,11 @@ static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
-static void term_setfont(GtkWidget *, VteTerminal *, size_t);
+static void term_set_font(GtkWidget *, VteTerminal *, size_t);
 
 
 void
-term_setfont(GtkWidget *win, VteTerminal *term, size_t index)
+term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
 {
     PangoFontDescription *font_desc = NULL;
 
@@ -96,7 +96,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     }
 
     /* Appearance. */
-    term_setfont(NULL, VTE_TERMINAL(term), 0);
+    term_set_font(NULL, VTE_TERMINAL(term), 0);
     gtk_widget_show_all(win);
 
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
@@ -266,15 +266,15 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                                                            GTK_WINDOW(win));
                 return TRUE;
 
-            case GDK_KEY_KP_1: term_setfont(win, term, 0); return TRUE;
-            case GDK_KEY_KP_2: term_setfont(win, term, 1); return TRUE;
-            case GDK_KEY_KP_3: term_setfont(win, term, 2); return TRUE;
-            case GDK_KEY_KP_4: term_setfont(win, term, 3); return TRUE;
-            case GDK_KEY_KP_5: term_setfont(win, term, 4); return TRUE;
-            case GDK_KEY_KP_6: term_setfont(win, term, 5); return TRUE;
-            case GDK_KEY_KP_7: term_setfont(win, term, 6); return TRUE;
-            case GDK_KEY_KP_8: term_setfont(win, term, 7); return TRUE;
-            case GDK_KEY_KP_9: term_setfont(win, term, 8); return TRUE;
+            case GDK_KEY_KP_1: term_set_font(win, term, 0); return TRUE;
+            case GDK_KEY_KP_2: term_set_font(win, term, 1); return TRUE;
+            case GDK_KEY_KP_3: term_set_font(win, term, 2); return TRUE;
+            case GDK_KEY_KP_4: term_set_font(win, term, 3); return TRUE;
+            case GDK_KEY_KP_5: term_set_font(win, term, 4); return TRUE;
+            case GDK_KEY_KP_6: term_set_font(win, term, 5); return TRUE;
+            case GDK_KEY_KP_7: term_set_font(win, term, 6); return TRUE;
+            case GDK_KEY_KP_8: term_set_font(win, term, 7); return TRUE;
+            case GDK_KEY_KP_9: term_set_font(win, term, 8); return TRUE;
         }
     }
 
