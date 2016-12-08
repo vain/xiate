@@ -3,6 +3,7 @@ Release history for xiate
 next
   [Changed]
   - Update geometry hints when changing font or font size.
+  - The deprecated GRegex API is no longer being used by xiate.
 
 v16.10  2016-10-29
   [Changed]

@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <vte/vte.h>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include "config.h"
 
 
@@ -83,7 +86,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GdkRGBA c_background_gdk;
     GdkRGBA c_palette_gdk[16];
     GdkRGBA c_gdk;
-    GRegex *url_gregex = NULL;
+    VteRegex *url_vregex = NULL;
     GError *err = NULL;
     GSpawnFlags spawn_flags;
 
@@ -144,14 +147,15 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
     }
 
-    url_gregex = g_regex_new(url_regex,
-                             G_REGEX_CASELESS | G_REGEX_MULTILINE, 0, &err);
-    if (url_gregex == NULL)
-        fprintf(stderr, "url_regex: %s\n", err->message);
+    url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
+                                         PCRE2_MULTILINE | PCRE2_CASELESS, &err);
+    if (url_vregex == NULL)
+        fprintf(stderr, "url_regex: %s\n",
+                err == NULL ? "<err is NULL>" : err->message);
     else
     {
-        vte_terminal_match_add_gregex(VTE_TERMINAL(term), url_gregex, 0);
-        g_regex_unref(url_gregex);
+        vte_terminal_match_add_regex(VTE_TERMINAL(term), url_vregex, 0);
+        vte_regex_unref(url_vregex);
     }
 
     /* Signals. */
