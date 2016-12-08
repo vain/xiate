@@ -37,6 +37,7 @@ static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
 static void socket_listen(char *);
 static gboolean term_new(gpointer);
 static void term_set_font(GtkWidget *, VteTerminal *, size_t);
+static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
 
 
 void
@@ -58,6 +59,18 @@ term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
     if (win != NULL)
         vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
                                                    GTK_WINDOW(win));
+}
+
+void
+term_set_font_scale(GtkWidget *win, VteTerminal *term, gdouble mult)
+{
+    gdouble s;
+
+    s = vte_terminal_get_font_scale(term);
+    s *= mult;
+    vte_terminal_set_font_scale(term, s);
+    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
+                                               GTK_WINDOW(win));
 }
 
 gboolean
@@ -221,27 +234,13 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
 void
 sig_decrease_font_size(VteTerminal *term, gpointer data)
 {
-    GtkWidget *win = (GtkWidget *)data;
-    gdouble s;
-
-    s = vte_terminal_get_font_scale(term);
-    s /= 1.1;
-    vte_terminal_set_font_scale(term, s);
-    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                               GTK_WINDOW(win));
+    term_set_font_scale((GtkWidget *)data, term, 1.0 / 1.1);
 }
 
 void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
-    GtkWidget *win = (GtkWidget *)data;
-    gdouble s;
-
-    s = vte_terminal_get_font_scale(term);
-    s *= 1.1;
-    vte_terminal_set_font_scale(term, s);
-    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                               GTK_WINDOW(win));
+    term_set_font_scale((GtkWidget *)data, term, 1.1);
 }
 
 gboolean
