@@ -34,6 +34,7 @@ static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
 static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
+static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
 static void sig_window_title_changed(VteTerminal *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
                               gpointer);
@@ -172,6 +173,8 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                      G_CALLBACK(sig_increase_font_size), win);
     g_signal_connect(G_OBJECT(term), "key-press-event",
                      G_CALLBACK(sig_key_press), win);
+    g_signal_connect(G_OBJECT(term), "resize-window",
+                     G_CALLBACK(sig_window_resize), win);
     g_signal_connect(G_OBJECT(term), "window-title-changed",
                      G_CALLBACK(sig_window_title_changed), win);
 
@@ -282,6 +285,23 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     }
 
     return FALSE;
+}
+
+void
+sig_window_resize(VteTerminal *term, guint width, guint height, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+    GtkRequisition natural;
+
+    /* This resizes the window to the exact size of the child widget.
+     * This works even if the child uses padding or other cosmetic
+     * attributes, and we don't need to know anything about it. */
+    if (width > 0 && height > 0)
+    {
+        vte_terminal_set_size(term, width, height);
+        gtk_widget_get_preferred_size(GTK_WIDGET(term), NULL, &natural);
+        gtk_window_resize(GTK_WINDOW(win), natural.width, natural.height);
+    }
 }
 
 void

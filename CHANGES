@@ -5,6 +5,9 @@ next
   - Update geometry hints when changing font or font size.
   - The deprecated GRegex API is no longer being used by xiate.
 
+  [Added]
+  - xiate now responds to resize requests of terminal applications.
+
 v16.10  2016-10-29
   [Changed]
   - Multiple fonts can be specified and you can switch during runtime.
