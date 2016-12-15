@@ -42,12 +42,14 @@ static void socket_listen(char *);
 static gboolean term_new(gpointer);
 static void term_set_font(GtkWidget *, VteTerminal *, size_t);
 static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
+static void term_set_size(GtkWidget *, VteTerminal *, glong, glong);
 
 
 void
 term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
 {
     PangoFontDescription *font_desc = NULL;
+    glong width, height;
 
     if (index >= sizeof fonts / sizeof fonts[0])
     {
@@ -55,10 +57,15 @@ term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
         return;
     }
 
+    width = vte_terminal_get_column_count(term);
+    height = vte_terminal_get_row_count(term);
+
     font_desc = pango_font_description_from_string(fonts[index]);
     vte_terminal_set_font(term, font_desc);
     pango_font_description_free(font_desc);
     vte_terminal_set_font_scale(term, 1);
+
+    term_set_size(win, term, width, height);
 
     if (win != NULL)
         vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
@@ -69,12 +76,38 @@ void
 term_set_font_scale(GtkWidget *win, VteTerminal *term, gdouble mult)
 {
     gdouble s;
+    glong width, height;
+
+    width = vte_terminal_get_column_count(term);
+    height = vte_terminal_get_row_count(term);
 
     s = vte_terminal_get_font_scale(term);
     s *= mult;
     vte_terminal_set_font_scale(term, s);
+    term_set_size(win, term, width, height);
     vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
                                                GTK_WINDOW(win));
+}
+
+void
+term_set_size(GtkWidget *win, VteTerminal *term, glong width, glong height)
+{
+    GtkRequisition natural;
+
+    /* This resizes the window to the exact size of the child widget.
+     * This works even if the child uses padding or other cosmetic
+     * attributes, and we don't need to know anything about it. */
+    if (width > 0 && height > 0)
+    {
+        vte_terminal_set_size(term, width, height);
+
+        /* win might be NULL when called from term_set_font(). */
+        if (win != NULL)
+        {
+            gtk_widget_get_preferred_size(GTK_WIDGET(term), NULL, &natural);
+            gtk_window_resize(GTK_WINDOW(win), natural.width, natural.height);
+        }
+    }
 }
 
 gboolean
@@ -290,18 +323,7 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_window_resize(VteTerminal *term, guint width, guint height, gpointer data)
 {
-    GtkWidget *win = (GtkWidget *)data;
-    GtkRequisition natural;
-
-    /* This resizes the window to the exact size of the child widget.
-     * This works even if the child uses padding or other cosmetic
-     * attributes, and we don't need to know anything about it. */
-    if (width > 0 && height > 0)
-    {
-        vte_terminal_set_size(term, width, height);
-        gtk_widget_get_preferred_size(GTK_WIDGET(term), NULL, &natural);
-        gtk_window_resize(GTK_WINDOW(win), natural.width, natural.height);
-    }
+    term_set_size((GtkWidget *)data, term, width, height);
 }
 
 void

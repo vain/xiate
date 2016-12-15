@@ -7,6 +7,8 @@ next
 
   [Added]
   - xiate now responds to resize requests of terminal applications.
+  - Terminal size (in terms of rows and columns) is being retained on
+    changes to fonts or font size.
 
 v16.10  2016-10-29
   [Changed]
