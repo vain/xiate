@@ -2,16 +2,17 @@ Release history for xiate
 
 next
   [Changed]
-  - Update geometry hints when changing font or font size.
   - The deprecated GRegex API is no longer being used by xiate.
+  - xiate now expects at least VTE version 0.46.
 
   [Added]
+  - Update geometry hints when changing font or font size.
   - xiate now responds to resize requests of terminal applications.
   - Terminal size (in terms of rows and columns) is being retained on
     changes to fonts or font size.
 
 v16.10  2016-10-29
-  [Changed]
+  [Added]
   - Multiple fonts can be specified and you can switch during runtime.
 
 v16.08  2016-08-20
