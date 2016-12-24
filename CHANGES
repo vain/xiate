@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v16.12  2016-12-24
   [Changed]
   - The deprecated GRegex API is no longer being used by xiate.
   - xiate now expects at least VTE version 0.46.
