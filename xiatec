@@ -41,16 +41,16 @@ do
 done
 
 (
-    printf "OC$PWD\000"
-    [[ -n "$class" ]] && printf "Oc$class\000"
-    [[ -n "$name" ]] && printf "On$name\000"
-    [[ -n "$title" ]] && printf "Ot$title\000"
+    printf "OC%s\000" "$PWD"
+    [[ -n "$class" ]] && printf "Oc%s\000" "$class"
+    [[ -n "$name" ]] && printf "On%s\000" "$name"
+    [[ -n "$title" ]] && printf "Ot%s\000" "$title"
     (( hold )) && printf 'H'
     if (( "${#execute[@]}" > 0 ))
     then
         for i in "${execute[@]}"
         do
-            printf "A$i\000"
+            printf "A%s\000" "$i"
         done
     fi
 ) | socat - UNIX:/var/run/user/$(id -u)/xiate-"$suffix",retry=10 \
