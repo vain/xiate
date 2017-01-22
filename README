@@ -13,7 +13,7 @@ and code try to remain much more minimalistic.
 Installation
 ------------
 
-The following C libraries are required:
+The following C libraries (or newer versions) are required:
 
     - GTK+ 3.20
     - VTE 0.44
