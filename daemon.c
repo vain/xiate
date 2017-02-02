@@ -136,14 +136,23 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Signals. */
     eo = calloc(1, sizeof (struct exit_options));
-    eo->hold = to->hold;
-    eo->win = win;
+    if (!eo)
+    {
+        perror(__NAME__": calloc for 'eo'");
+        fprintf(stderr, __NAME__": Did not connect signal handler for "
+                        "'child-exited'\n");
+    }
+    else
+    {
+        eo->hold = to->hold;
+        eo->win = win;
+        g_signal_connect(G_OBJECT(term), "child-exited",
+                         G_CALLBACK(sig_child_exited), eo);
+    }
     g_signal_connect(G_OBJECT(term), "bell",
                      G_CALLBACK(sig_bell), win);
     g_signal_connect(G_OBJECT(term), "button-press-event",
                      G_CALLBACK(sig_button_press), NULL);
-    g_signal_connect(G_OBJECT(term), "child-exited",
-                     G_CALLBACK(sig_child_exited), eo);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
@@ -304,9 +313,19 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     (void)source_object;
 
     to = calloc(1, sizeof (struct term_options));
+    if (!to)
+    {
+        perror(__NAME__": calloc for 'to'");
+        goto garbled;
+    }
     to->cwd = NULL;
     to->hold = FALSE;
     to->message = calloc(1, msg_size);
+    if (!to->message)
+    {
+        perror(__NAME__": calloc for 'to->message'");
+        goto garbled;
+    }
     to->title = __NAME__;
     to->wm_class = __NAME_CAPITALIZED__;
     to->wm_name = __NAME__;
@@ -387,13 +406,18 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         }
     }
 
-    if (args != NULL)
+    if (args)
     {
         to->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
-        for (args_i = 0; args_i < g_slist_length(args); args_i++)
-            to->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
+        if (!to->argv)
+            perror(__NAME__": calloc for 'to->argv'");
+        else
+        {
+            for (args_i = 0; args_i < g_slist_length(args); args_i++)
+                to->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
+        }
+        g_slist_free(args);
     }
-    g_slist_free(args);
 
     /* We're not on the main thread. */
     g_main_context_invoke(NULL, term_new, to);
@@ -402,10 +426,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     return TRUE;
 
 garbled:
-    fprintf(stderr, __NAME__": Garbled message, aborting.\n");
-    g_slist_free(args);
-    free(to->message);
-    free(to);
+    fprintf(stderr, __NAME__": Garbled message or memory error, aborting.\n");
+    if (args)
+        g_slist_free(args);
+    if (to && to->message)
+        free(to->message);
+    if (to)
+        free(to);
     return TRUE;
 }
 
@@ -453,7 +480,7 @@ term_new(gpointer data)
     if (!setup_term(win, term, to))
         gtk_widget_destroy(win);
 
-    if (to->argv != NULL)
+    if (to->argv)
         free(to->argv);
     free(to->message);
     free(to);
