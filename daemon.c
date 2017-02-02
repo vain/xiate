@@ -303,7 +303,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     (void)service;
     (void)source_object;
 
-    to = calloc(sizeof(struct term_options), 1);
+    to = calloc(1, sizeof (struct term_options));
     to->cwd = NULL;
     to->hold = FALSE;
     to->message = calloc(1, msg_size);
@@ -389,7 +389,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
     if (args != NULL)
     {
-        to->argv = calloc(g_slist_length(args) + 1, sizeof(char *));
+        to->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
         for (args_i = 0; args_i < g_slist_length(args); args_i++)
             to->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
     }
