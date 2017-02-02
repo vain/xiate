@@ -15,6 +15,12 @@
 #include "config.h"
 
 
+struct exit_options
+{
+    gboolean hold;
+    GtkWidget *win;
+};
+
 struct term_options
 {
     char **argv;
@@ -58,6 +64,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     VteRegex *url_vregex = NULL;
     GError *err = NULL;
     GSpawnFlags spawn_flags;
+    struct exit_options *eo = NULL;
 
     if (to->argv != NULL)
     {
@@ -128,13 +135,15 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     }
 
     /* Signals. */
+    eo = calloc(1, sizeof (struct exit_options));
+    eo->hold = to->hold;
+    eo->win = win;
     g_signal_connect(G_OBJECT(term), "bell",
                      G_CALLBACK(sig_bell), win);
     g_signal_connect(G_OBJECT(term), "button-press-event",
                      G_CALLBACK(sig_button_press), NULL);
-    if (!to->hold)
-        g_signal_connect(G_OBJECT(term), "child-exited",
-                         G_CALLBACK(sig_child_exited), win);
+    g_signal_connect(G_OBJECT(term), "child-exited",
+                     G_CALLBACK(sig_child_exited), eo);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
@@ -198,12 +207,20 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
-    GtkWidget *win = (GtkWidget *)data;
+    struct exit_options *eo = (struct exit_options *)data;
+    GdkRGBA c_background_gdk;
 
     (void)status;
-    (void)term;
 
-    gtk_widget_destroy(win);
+    if (eo->hold)
+    {
+        gdk_rgba_parse(&c_background_gdk, c_background);
+        vte_terminal_set_color_cursor(term, &c_background_gdk);
+    }
+    else
+        gtk_widget_destroy(eo->win);
+
+    free(eo);
 }
 
 void

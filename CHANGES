@@ -5,6 +5,10 @@ next
   - xiatec no longer fails if user parameters contain printf format
     strings (ouch).
 
+  [Added]
+  - xiate now hides the cursor when the child process exits and "-hold"
+    is used.
+
 v16.12  2016-12-24
   [Changed]
   - The deprecated GRegex API is no longer being used by xiate.
