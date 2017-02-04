@@ -225,6 +225,7 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
     {
         gdk_rgba_parse(&c_background_gdk, c_background);
         vte_terminal_set_color_cursor(term, &c_background_gdk);
+        gtk_window_set_title(GTK_WINDOW(eo->win), __NAME__" - CHILD HAS QUIT");
     }
     else
         gtk_widget_destroy(eo->win);

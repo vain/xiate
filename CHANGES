@@ -6,8 +6,8 @@ next
     strings (ouch).
 
   [Added]
-  - xiate now hides the cursor when the child process exits and "-hold"
-    is used.
+  - xiate now hides the cursor and changes the window title when the
+    child process exits and "-hold" is used.
   - xiate should cope better with OOM situations. We always try to keep
     the process running in order to *not* kill all your open terminal
     windows.
