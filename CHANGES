@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v17.02  2017-02-12
   [Fixed]
   - xiatec no longer fails if user parameters contain printf format
     strings (ouch).
