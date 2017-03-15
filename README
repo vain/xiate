@@ -20,9 +20,8 @@ The following C libraries (or newer versions) are required:
 
 xiate expects to be run on a POSIX-ish operating system.
 
-You can customize the program by creating your own config.h based on
-config.def.h. In any case, config.h must exist in order to build the
-program.
+You can customize the program by editing the config.h file, or
+by defining the macros mentioned in that file via CFLAGS.
 
 To build the program and install it to /usr/local:
 
