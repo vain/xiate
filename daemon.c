@@ -261,6 +261,13 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
             case GDK_KEY_V:
                 vte_terminal_paste_clipboard(term);
                 return TRUE;
+            case GDK_KEY_plus:
+            case GDK_KEY_equal:
+                sig_increase_font_size(term, data);
+                return TRUE;
+            case GDK_KEY_minus:
+                sig_decrease_font_size(term, data);
+                return TRUE;
             case GDK_KEY_KP_0:
                 vte_terminal_set_font_scale(term, 1);
                 vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
