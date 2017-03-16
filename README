@@ -18,11 +18,6 @@ The following C libraries (or newer versions) are required:
     - GTK+ 3.20
     - VTE 0.44
 
-The following external tools are also required but kind of optional:
-
-    - GNU bash
-    - socat
-
 xiate expects to be run on a POSIX-ish operating system.
 
 You can customize the program by creating your own config.h based on
@@ -49,8 +44,9 @@ connections. Using a simple protocol, you can instruct xiate to actually
 launch a new terminal window and/or run a program:
 
     $ xiatec
-    $ xiatec -e vim
+    $ xiatec -- vim
 
-As you can see, though, by reading the source code, the protocol is not
-very hard to understand. This means you're not forced to use socat.
-Anything that can talk to a UNIX socket is a suitable client for xiate.
+As you can see, though, by reading the source code, the protocol is
+not very hard to understand. This means you're not forced to use this
+particular client implementation. Anything that can talk to a UNIX
+socket is a suitable client for xiate.

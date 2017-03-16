@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <gio/gunixsocketaddress.h>
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vte/vte.h>
+#include "xiate.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -443,14 +443,8 @@ socket_listen(char *suffix)
     GSocketService *sock;
     GSocketAddress *sa;
     GError *err = NULL;
-    char *name, *path;
 
-    name = g_strdup_printf("%s-%s", __NAME__, suffix);
-    path = g_build_filename(g_get_user_runtime_dir(), name, NULL);
-    g_free(name);
-    unlink(path);
-    sa = g_unix_socket_address_new(path);
-    g_free(path);
+    sa = xiate_new_socket_address(suffix);
 
     sock = g_threaded_socket_service_new(-1);
     if (!g_socket_listener_add_address(G_SOCKET_LISTENER(sock), sa,

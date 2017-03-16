@@ -5,12 +5,12 @@ xiatec \- terminal emulator (client)
 .\" --------------------------------------------------------------------
 .SH SYNOPSIS
 \fBxiatec\fP
-[\fB\-class\fP \fIclass\fP]
-[\fB\-e\fP \fIargs...\fP]
-[\fB\-hold\fP]
-[\fB\-name\fP \fIname\fP]
-[\fB\-title\fP \fItitle\fP]
+[\fB\-\-class\fP \fIclass\fP]
+[\fB\-\-hold\fP]
+[\fB\-\-name\fP \fIname\fP]
+[\fB\-\-title\fP \fItitle\fP]
 [\fB\-\-suffix\fP \fIsuffix\fP]
+[\fB\-\-\fP \fIcmd\fP \fIargs...\fP]
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 \fBxiatec\fP is a client for xiate. You can use it in order to actually
@@ -20,41 +20,35 @@ Please note: Unlike some other terminals, \fBxiatec\fP immediately
 exits, i.e. it does not wait for the terminal window to be closed.
 .\" --------------------------------------------------------------------
 .SH OPTIONS
-\fBxiatec\fP provides some common options which are compatible to
-those of \fBxterm\fP(1). They all start with a single dash:
 .TP
-\fB\-class\fP \fIclass\fP
+\fB\-c\fP \fIclass\fP, \fB\--class\fP \fIclass\fP
 Sets the window's class (part of the X property WM_CLASS).
 .TP
-\fB\-e\fP \fIargs...\fP
-Interpret all remaining arguments as an \(lqargument vector\(rq, i.e.
-tell \fBxiate\fP what to run. This must be the last option on the
-command line.
-.TP
-\fB\-hold\fP
+\fB\-h\fP, \fB\-\-hold\fP
 Don't close the window after the command has finished.
 .TP
-\fB\-name\fP \fIname\fP
+\fB\-n\fP \fIname\fP, \fB\-\-name\fP \fIname\fP
 Sets the window's instance name (part of the X property WM_CLASS).
 .TP
-\fB\-title\fP \fItitle\fP
+\fB\-t\fP \fItitle\fP, \fB\-\-title\fP \fItitle\fP
 Sets the initial window title. Be aware that the title will very likely
 be overwritten by child processes.
-.P
-The following options are unique to \fBxiatec\fP \(em they all start
-with two dashes:
 .TP
-\fB\-\-suffix\fP \fIsuffix\fP
+\fB\-s\fP \fIsuffix\fP, \fB\-\-suffix\fP \fIsuffix\fP
 \fBxiate\fP creates a UNIX socket on which it listens for incoming
 connections. This socket is named \(lqxiate-\fIsuffix\fP\(rq.
 \fIsuffix\fP defaults to \fBmain\fP.
+.TP
+\fB\-\-\fP \fIcmd\fP \fIargs...\fP
+The command to run in the client.
 .\" --------------------------------------------------------------------
 .SH LICENSE
 \fBxiatec\fP is released as \(lqPIZZA-WARE\(rq. See the accompanying
 \fILICENSE\fP file.
 .\" --------------------------------------------------------------------
 .SH HISTORY
-\fBxiatec\fP was originally written by Peter Hofmann. The project was
+\fBxiatec\fP was originally written by Peter Hofmann as a \fBbash\fP
+script, and re-written in C by Cesar Crusius. The project was
 started in September 2015.
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
