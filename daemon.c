@@ -61,8 +61,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GdkRGBA c_background_gdk;
     GdkRGBA c_palette_gdk[16];
     GdkRGBA c_gdk;
+#   if VTE_CHECK_VERSION(0,44,0)
     VteRegex *url_vregex = NULL;
     GError *err = NULL;
+#   endif
     GSpawnFlags spawn_flags;
     struct exit_options *eo = NULL;
 
@@ -117,12 +119,15 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
     }
 
+#   if VTE_CHECK_VERSION(0,44,0)
     if (c_cursor_foreground != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_cursor_foreground);
         vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
     }
+#   endif
 
+#   if VTE_CHECK_VERSION(0,44,0)
     url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
                                          PCRE2_MULTILINE | PCRE2_CASELESS, &err);
     if (url_vregex == NULL)
@@ -133,6 +138,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
         vte_terminal_match_add_regex(VTE_TERMINAL(term), url_vregex, 0);
         vte_regex_unref(url_vregex);
     }
+#   endif
 
     /* Signals. */
     eo = calloc(1, sizeof (struct exit_options));
