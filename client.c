@@ -95,17 +95,17 @@ static void init(struct client_options *options, struct client_state *state)
     g_free(pwd);
 
     if(options->wclass) {
-        cmd(state, "Oc%", options->wclass);
+        cmd(state, "Oc", options->wclass);
         g_free(options->wclass);
     }
 
     if(options->title) {
-        cmd(state, "Ot%", options->title);
+        cmd(state, "Ot", options->title);
         g_free(options->title);
     }
 
     if(options->name) {
-        cmd(state, "On%", options->name);
+        cmd(state, "On", options->name);
         g_free(options->name);
     }
 
