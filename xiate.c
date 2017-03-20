@@ -74,7 +74,10 @@ static gboolean get_boolean(
     XPointer addr = get_prop(db, options, name, &type);
     return
             addr ?
-            !strcmp("true", addr) :
+            strcasecmp(addr, "TRUE") == 0
+            || strcasecmp(addr, "YES") == 0
+            || strcasecmp(addr, "ON") == 0
+            || strcasecmp(addr, "1") == 0 :
             def;
 }
 
