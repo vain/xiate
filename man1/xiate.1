@@ -46,6 +46,45 @@ Paste from clipboard.
 When hovering over URLs, you can use this button to copy the URL to your
 clipboard.
 .\" --------------------------------------------------------------------
+.SH RESOURCES
+You can set and change the resources using X11 tools like
+\fBxrdb\fR. Many distributions do also load settings from the
+\fB~/.Xresources\fR file when X starts. The following resources are
+supported:
+.IP "\fBbackground:\fR \fIcolor\fR" 4
+.IX Item "background: color"
+Use the specified color as the window's background color.
+.IP "\fBforeground:\fR \fIcolor\fR" 4
+.IX Item "foreground: color"
+Use the specified color as the window's foreground color.
+.IP "\fBcolor\fIn\fB:\fR \fIcolor\fR" 4
+.IX Item "colorn: color"
+Use the specified color for the color value \fIn\fR, where 0-7
+corresponds to the low-intensity (normal) colors and 8-15 corresponds
+to high-intensity (bold = bright foreground, blink = bright
+background) colors. The canonical names are as follows: 0=black,
+1=red, 2=green, 3=yellow, 4=blue, 5=magenta, 6=cyan, 7=white.
+.IP "\fBcolorBD:\fR \fIcolor\fR" 4
+.IX Item "colorBD: color"
+Use the specified color to display bold characters when the foreground
+color is the default.
+.IP "\fBcursorColor:\fR \fIcolor\fR" 4
+.IX Item "cursorColor: color"
+Use the specified color for the cursor.
+.IP "\fBcursorColor2:\fR \fIcolor\fR" 4
+.IX Item "cursorColor2: color"
+Use the specified color for the color of the cursor text.
+.IP "\fBfont:\fR \fIfontlist\fR" 4
+.IX Item "font: fontlist"
+The fonts to be used. This is a comma separated list of font names.
+.IP "\fBloginShell:\fR \fIboolean\fR" 4
+.IX Item "loginShell: boolean"
+If \fBtrue\fR, start as a login shell. Otherwise, start as a normal
+sub-shell.
+.IP "\fBsaveLines:\fR \fInumber\fR" 4
+.IX Item "saveLines: number"
+Save \fInumber\fR lines in the scrollback buffer.
+.\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .P
 .TP
