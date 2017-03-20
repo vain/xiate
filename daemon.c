@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,26 +11,13 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
-#include "config.h"
-
+char *url_regex = "[a-z]+://[[:graph:]]+";
 
 struct exit_options
 {
     gboolean hold;
     GtkWidget *win;
 };
-
-struct term_options
-{
-    char **argv;
-    char *cwd;
-    gboolean hold;
-    char *message;
-    char *title;
-    char *wm_class;
-    char *wm_name;
-};
-
 
 static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void sig_bell(VteTerminal *, gpointer);
@@ -68,6 +54,9 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     GSpawnFlags spawn_flags;
     struct exit_options *eo = NULL;
 
+    /* Get configuration values. */
+    xiate_get_resources(term, to);
+
     if (to->argv != NULL)
     {
         args_use = to->argv;
@@ -80,7 +69,7 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
             args_default[0] = vte_get_user_shell();
             if (args_default[0] == NULL)
                 args_default[0] = "/bin/sh";
-            if (login_shell)
+            if (to->loginShell)
                 args_default[1] = g_strdup_printf("-%s", args_default[0]);
             else
                 args_default[1] = args_default[0];
@@ -93,39 +82,41 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     term_set_font(NULL, VTE_TERMINAL(term), 0);
     gtk_widget_show_all(win);
 
-    vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
+    vte_terminal_set_allow_bold(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
                                                GTK_WINDOW(win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
-    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), to->saveLines);
 
-    gdk_rgba_parse(&c_foreground_gdk, c_foreground);
-    gdk_rgba_parse(&c_background_gdk, c_background);
-    for (i = 0; i < 16; i++)
-        gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
+    gdk_rgba_parse(&c_foreground_gdk, to->foreground); g_free(to->foreground);
+    gdk_rgba_parse(&c_background_gdk, to->background); g_free(to->background);
+    for (i = 0; i < 16; i++) {
+        gdk_rgba_parse(&c_palette_gdk[i], to->palette[i]);
+        g_free(to->palette[i]);
+    }
     vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk,
                             &c_background_gdk, c_palette_gdk, 16);
 
-    if (c_bold != NULL)
+    if (to->colorBD != NULL)
     {
-        gdk_rgba_parse(&c_gdk, c_bold);
+        gdk_rgba_parse(&c_gdk, to->colorBD); g_free(to->colorBD);
         vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_gdk);
     }
 
-    if (c_cursor != NULL)
+    if (to->cursorColor != NULL)
     {
-        gdk_rgba_parse(&c_gdk, c_cursor);
+        gdk_rgba_parse(&c_gdk, to->cursorColor); g_free(to->cursorColor);
         vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
     }
 
-#   if VTE_CHECK_VERSION(0,44,0)
-    if (c_cursor_foreground != NULL)
+    if (to->cursorColor2 != NULL)
     {
-        gdk_rgba_parse(&c_gdk, c_cursor_foreground);
+        gdk_rgba_parse(&c_gdk, to->cursorColor2); g_free(to->cursorColor2);
+#       if VTE_CHECK_VERSION(0,44,0)
         vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
+#       endif
     }
-#   endif
 
 #   if VTE_CHECK_VERSION(0,44,0)
     url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
@@ -223,14 +214,11 @@ void
 sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
     struct exit_options *eo = (struct exit_options *)data;
-    GdkRGBA c_background_gdk;
 
     (void)status;
 
     if (eo->hold)
     {
-        gdk_rgba_parse(&c_background_gdk, c_background);
-        vte_terminal_set_color_cursor(term, &c_background_gdk);
         gtk_window_set_title(GTK_WINDOW(eo->win), __NAME__" - CHILD HAS QUIT");
     }
     else
@@ -503,7 +491,8 @@ term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
     PangoFontDescription *font_desc = NULL;
     glong width, height;
 
-    if (index >= sizeof fonts / sizeof fonts[0])
+    const gchar *font = xiate_get_font(index);
+    if (!font)
     {
         fprintf(stderr, __NAME__": Warning: Invalid font index\n");
         return;
@@ -512,7 +501,7 @@ term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
     width = vte_terminal_get_column_count(term);
     height = vte_terminal_get_row_count(term);
 
-    font_desc = pango_font_description_from_string(fonts[index]);
+    font_desc = pango_font_description_from_string(font);
     vte_terminal_set_font(term, font_desc);
     pango_font_description_free(font_desc);
     vte_terminal_set_font_scale(term, 1);

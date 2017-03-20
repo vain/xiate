@@ -33,17 +33,17 @@ obj/%.o: %.c
 
 obj/xiate.o: xiate.h
 obj/client.o: xiate.h
-obj/server.o: xiate.h config.h
+obj/server.o: xiate.h
 
 $(__NAME__): obj/daemon.o obj/xiate.o
 	$(CC) $(CFLAGS) $(LDFLAGS) \
 		-o $@ $^ \
-		`pkg-config --cflags --libs gtk+-3.0 vte-2.91`
+		`pkg-config --cflags --libs gtk+-3.0 vte-2.91` -lX11
 
 $(__NAME__)c: obj/client.o obj/xiate.o
 	$(CC) $(CFLAGS) $(LDFLAGS) \
 		-o $@ $^ \
-		`pkg-config --cflags --libs gtk+-3.0 vte-2.91`
+		`pkg-config --cflags --libs gtk+-3.0 vte-2.91` -lX11
 
 install: $(__NAME__) $(__NAME__)c installdirs
 	$(INSTALL_PROGRAM) $(__NAME__) $(DESTDIR)$(bindir)/$(__NAME__)
