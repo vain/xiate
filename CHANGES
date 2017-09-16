@@ -1,5 +1,11 @@
 Release history for xiate
 
+next
+  [LICENSING]
+  - The project has been relicensed under the MIT license (more
+    precisely called "Expat License", but everyone calls it "MIT
+    license" these days).
+
 v17.02  2017-02-12
   [Fixed]
   - xiatec no longer fails if user parameters contain printf format
