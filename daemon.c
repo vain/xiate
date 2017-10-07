@@ -33,7 +33,8 @@ struct term_options
 };
 
 
-static gboolean setup_term(GtkWidget *, GtkWidget *, struct term_options *);
+static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
+static void setup_term(GtkWidget *, GtkWidget *, struct term_options *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
@@ -51,7 +52,21 @@ static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
 static void term_set_size(GtkWidget *, VteTerminal *, glong, glong);
 
 
-gboolean
+void
+cb_spawn_async(VteTerminal *term, GPid pid, GError *err, gpointer data)
+{
+    GtkWidget *win = (GtkWidget *)data;
+
+    (void)term;
+
+    if (pid == -1 && err != NULL)
+    {
+        fprintf(stderr, __NAME__": Spawning child failed: %s\n", err->message);
+        gtk_widget_destroy(win);
+    }
+}
+
+void
 setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 {
     static char *args_default[] = { NULL, NULL, NULL };
@@ -168,9 +183,9 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
                      G_CALLBACK(sig_window_title_changed), win);
 
     /* Spawn child. */
-    return vte_terminal_spawn_sync(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
-                                   args_use, NULL, spawn_flags,
-                                   NULL, NULL, NULL, NULL, NULL);
+    vte_terminal_spawn_async(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
+                             args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
+                             NULL, cb_spawn_async, win);
 }
 
 void
@@ -497,8 +512,7 @@ term_new(gpointer data)
 
     term = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(win), term);
-    if (!setup_term(win, term, to))
-        gtk_widget_destroy(win);
+    setup_term(win, term, to);
 
     if (to->argv)
         free(to->argv);
