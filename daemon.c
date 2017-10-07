@@ -98,6 +98,9 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
+    if (hyperlink_handler != NULL)
+        vte_terminal_set_allow_hyperlink(VTE_TERMINAL(term), TRUE);
+
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
     for (i = 0; i < 16; i++)
@@ -191,6 +194,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     GtkClipboard *clip = NULL;
     char *url = NULL;
+    char *argv[] = { hyperlink_handler, NULL, NULL };
 
     (void)data;
 
@@ -198,6 +202,21 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     {
         if (((GdkEventButton *)event)->button == 3)
         {
+            /* Explicit hyperlinks take precedence over potential URL
+             * matches. */
+            if (hyperlink_handler != NULL)
+            {
+                url = vte_terminal_hyperlink_check_event(VTE_TERMINAL(widget), event);
+                if (url != NULL)
+                {
+                    argv[1] = url;
+                    g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
+                                  NULL, NULL, NULL);
+                    g_free(url);
+                    return FALSE;
+                }
+            }
+
             clip = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
             url = vte_terminal_match_check_event(VTE_TERMINAL(widget),
                                                  event, NULL);

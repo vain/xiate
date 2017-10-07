@@ -16,7 +16,7 @@ Installation
 The following C libraries (or newer versions) are required:
 
     - GTK+ 3.20
-    - VTE 0.44
+    - VTE 0.50
 
 The following external tools are also required but kind of optional:
 

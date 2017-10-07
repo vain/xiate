@@ -32,6 +32,18 @@ guint scrollback_lines = 50000;
  * button to copy the URL to your clipboard. */
 char *url_regex = "[a-z]+://[[:graph:]]+";
 
+/* Set this to the absolute path of a tool to handle explicit
+ * hyperlinks. It will be passed the hyperlink's target in argv[1]. Use
+ * your right mouse button to "launch" hyperlinks.
+ *
+ * If set to NULL, explicit hyperlinks will be disabled altogether.
+ *
+ * Requires VTE 0.50 or newer.
+ *
+ * See the following Gist to learn more about hyperlinks:
+ * https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda */
+char *hyperlink_handler = NULL;
+
 /* Background color of text under the cursor. There's a special mode:
  * "If NULL, text under the cursor will be drawn with foreground and
  * background colors reversed." */
