@@ -290,7 +290,7 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
         switch (((GdkEventKey *)event)->keyval)
         {
             case GDK_KEY_C:
-                vte_terminal_copy_clipboard(term);
+                vte_terminal_copy_clipboard_format(term, VTE_FORMAT_TEXT);
                 return TRUE;
             case GDK_KEY_V:
                 vte_terminal_paste_clipboard(term);
