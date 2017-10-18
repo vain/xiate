@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v17.10  2017-10-18
   [Changed]
   - We use vte_terminal_spawn_async() now, because the _sync() function
     has been deprecated. This means that you now get a proper error
