@@ -334,7 +334,7 @@ gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer data)
 {
-    GInputStream* s;
+    GInputStream *s;
     gsize msg_size = 4096, i, sz_read;
     GSList *args = NULL;
     struct term_options *to = NULL;
