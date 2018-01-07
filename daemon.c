@@ -335,8 +335,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer data)
 {
     GInputStream* s;
-    gssize i, sz_read;
-    gsize msg_size = 4096;
+    gsize msg_size = 4096, i, sz_read;
     GSList *args = NULL;
     struct term_options *to = NULL;
     guint args_i;
@@ -366,9 +365,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     to->wm_name = __NAME__;
 
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-    sz_read = g_input_stream_read(s, to->message, msg_size, NULL, NULL);
-
-    if (sz_read < 1)
+    if (!g_input_stream_read_all(s, to->message, msg_size, &sz_read, NULL, NULL))
         goto garbled;
 
     for (i = 0; i < sz_read; i++)

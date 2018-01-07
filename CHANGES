@@ -1,5 +1,13 @@
 Release history for xiate
 
+next
+  [Fixed]
+  - There was a race condition in the communication between server and
+    client. Depending on your machine (or its current load), the server
+    might not have read all data sent by the client. Example: When
+    running "xiatec -hold -e ls -al", the server might have dropped the
+    "-e ..." part, thus running only a shell.
+
 v17.10  2017-10-18
   [Changed]
   - We use vte_terminal_spawn_async() now, because the _sync() function
