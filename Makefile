@@ -17,7 +17,7 @@ man1dir = $(mandir)/man1
 
 .PHONY: all clean install installdirs
 
-all: $(__NAME__)
+all: $(__NAME__) $(__NAME__)c
 
 $(__NAME__): daemon.c config.h
 	$(CC) $(CFLAGS) $(LDFLAGS) \
@@ -27,6 +27,13 @@ $(__NAME__): daemon.c config.h
 		-DSRVR_$$HOSTNAME \
 		-o $@ $< \
 		`pkg-config --cflags --libs gtk+-3.0 vte-2.91`
+
+$(__NAME__)c: client.c
+	$(CC) $(CFLAGS) $(LDFLAGS) \
+		-D__NAME__=\"$(__NAME__)c\" \
+		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)c\" \
+		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)C\" \
+		-o $@ $<
 
 install: $(__NAME__) installdirs
 	$(INSTALL_PROGRAM) $(__NAME__) $(DESTDIR)$(bindir)/$(__NAME__)
@@ -38,4 +45,4 @@ installdirs:
 	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
 
 clean:
-	rm -f $(__NAME__)
+	rm -f $(__NAME__) $(__NAME__)c
