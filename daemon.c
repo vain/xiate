@@ -645,6 +645,12 @@ term_set_size(GtkWidget *win, VteTerminal *term, glong width, glong height)
 int
 main(int argc, char **argv)
 {
+    if (argc < 1 || argc > 2)
+    {
+        fprintf(stderr, __NAME__": Invalid arguments, check manpage\n");
+        return 1;
+    }
+
     gtk_init(&argc, &argv);
     if (argc == 2)
         socket_listen(argv[1]);
