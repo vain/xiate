@@ -8,6 +8,16 @@ next
     running "xiatec -hold -e ls -al", the server might have dropped the
     "-e ..." part, thus running only a shell.
 
+  [Changed]
+  - xiatec now keeps running until the associated terminal window has
+    been closed.
+  - This requires a change in the protocol spoken between server and
+    client. "H" now needs a NUL byte following it and the entire
+    sequence must be enclosed in "S\000 .. F\000".
+  - Also, the client has been reimplemented in C, so the dependency on
+    Bash and socat is gone.
+  - Sockets now live in /tmp/xiate-$uid.
+
 v17.10  2017-10-18
   [Changed]
   - We use vte_terminal_spawn_async() now, because the _sync() function
