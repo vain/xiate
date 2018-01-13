@@ -525,11 +525,13 @@ socket_listen(char *suffix)
     GSocketService *sock;
     GSocketAddress *sa;
     GError *err = NULL;
-    char *name, *path;
+    char *path;
 
-    name = g_strdup_printf("%s-%s", __NAME__, suffix);
-    path = g_build_filename(g_get_user_runtime_dir(), name, NULL);
-    g_free(name);
+    path = g_strdup_printf("/tmp/%s-%d", __NAME__, getuid());
+    mkdir(path, S_IRWXU);
+    g_free(path);
+
+    path = g_strdup_printf("/tmp/%s-%d/%s", __NAME__, getuid(), suffix);
     unlink(path);
     sa = g_unix_socket_address_new(path);
     g_free(path);
