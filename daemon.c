@@ -491,14 +491,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
 garbled:
     fprintf(stderr, __NAME__": Garbled message or memory error, aborting.\n");
-    if (args)
-        g_slist_free(args);
-    if (message)
-        free(message);
     if (c && c->sock_stream)
         g_object_unref(c->sock_stream);
-    if (c)
-        free(c);
+    free(c);
+    if (args)
+        g_slist_free(args);
+    free(message);
     return TRUE;
 }
 
