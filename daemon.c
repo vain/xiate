@@ -20,6 +20,7 @@ struct Client
     char **argv;
     char *cwd;
     gboolean hold;
+    char *message;
     char *title;
     char *wm_class;
     char *wm_name;
@@ -310,6 +311,7 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
     g_object_unref(c->sock_stream);
 
     free(c->argv);
+    free(c->message);
     free(c);
 }
 
@@ -339,7 +341,6 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     guint args_i;
     char option;
     char *value;
-    char *message = NULL;
 
     (void)data;
     (void)service;
@@ -351,10 +352,10 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         perror(__NAME__": calloc for 'c'");
         goto garbled;
     }
-    message = calloc(1, msg_size);
-    if (message == NULL)
+    c->message = calloc(1, msg_size);
+    if (c->message == NULL)
     {
-        perror(__NAME__": calloc for 'message'");
+        perror(__NAME__": calloc for 'c->message'");
         goto garbled;
     }
     c->title = __NAME__;
@@ -373,7 +374,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     do
     {
         read_now = g_input_stream_read(s,
-                                       message + sz_read,
+                                       c->message + sz_read,
                                        msg_size - sz_read,
                                        NULL, NULL);
         if (read_now == 0 || read_now == -1)
@@ -381,13 +382,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
         sz_read += read_now;
     } while (sz_read < 3 ||
-             message[(sz_read - 1) - 2] != 0   ||
-             message[(sz_read - 1) - 1] != 'F' ||
-             message[(sz_read - 1)    ] != 0);
+             c->message[(sz_read - 1) - 2] != 0   ||
+             c->message[(sz_read - 1) - 1] != 'F' ||
+             c->message[(sz_read - 1)    ] != 0);
 
     for (i = 0; i < sz_read; i++)
     {
-        switch (message[i])
+        switch (c->message[i])
         {
             case 'S':
             case 'F':
@@ -395,7 +396,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                  * message. We just check here if the message format is
                  * okay. */
                 i++;
-                if (i >= sz_read || message[i] != 0)
+                if (i >= sz_read || c->message[i] != 0)
                     goto garbled;
                 break;
 
@@ -405,12 +406,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                args = g_slist_append(args, &message[i]);
+                args = g_slist_append(args, &c->message[i]);
 
                 /* Jump to the NUL byte of the string, so that the next
                  * iteration of the outer for-loop will jump to the next
                  * byte after that NUL. */
-                while (i < sz_read && message[i] != 0)
+                while (i < sz_read && c->message[i] != 0)
                     i++;
                 if (i == sz_read)
                     goto garbled;
@@ -420,7 +421,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
             case 'H':
                 c->hold = TRUE;
                 i++;
-                if (i >= sz_read || message[i] != 0)
+                if (i >= sz_read || c->message[i] != 0)
                     goto garbled;
                 break;
 
@@ -431,12 +432,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                option = message[i];
+                option = c->message[i];
 
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                value = &message[i];
+                value = &c->message[i];
 
                 if (option == 'C' || option == 'c' || option == 'n' ||
                     option == 't')
@@ -444,7 +445,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                     /* Jump to the NUL byte of the string, so that the
                      * next iteration of the outer for-loop will jump to
                      * the next byte after that NUL. */
-                    while (i < sz_read && message[i] != 0)
+                    while (i < sz_read && c->message[i] != 0)
                         i++;
                     if (i == sz_read)
                         goto garbled;
@@ -481,8 +482,6 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         g_slist_free(args);
     }
 
-    free(message);
-
     /* We're not on the main thread. */
     g_main_context_invoke(NULL, term_new, c);
 
@@ -493,10 +492,11 @@ garbled:
     fprintf(stderr, __NAME__": Garbled message or memory error, aborting.\n");
     if (c && c->sock_stream)
         g_object_unref(c->sock_stream);
+    if (c != NULL)
+        free(c->message);
     free(c);
     if (args != NULL)
         g_slist_free(args);
-    free(message);
     return TRUE;
 }
 
