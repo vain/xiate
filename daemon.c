@@ -346,13 +346,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     (void)source_object;
 
     c = calloc(1, sizeof (struct Client));
-    if (!c)
+    if (c == NULL)
     {
         perror(__NAME__": calloc for 'c'");
         goto garbled;
     }
     message = calloc(1, msg_size);
-    if (!message)
+    if (message == NULL)
     {
         perror(__NAME__": calloc for 'message'");
         goto garbled;
@@ -468,10 +468,10 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
         }
     }
 
-    if (args)
+    if (args != NULL)
     {
         c->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
-        if (!c->argv)
+        if (c->argv == NULL)
             perror(__NAME__": calloc for 'c->argv'");
         else
         {
@@ -494,7 +494,7 @@ garbled:
     if (c && c->sock_stream)
         g_object_unref(c->sock_stream);
     free(c);
-    if (args)
+    if (args != NULL)
         g_slist_free(args);
     free(message);
     return TRUE;
