@@ -31,8 +31,8 @@ $(__NAME__): daemon.c config.h
 $(__NAME__)c: client.c
 	$(CC) $(CFLAGS) $(LDFLAGS) \
 		-D__NAME__=\"$(__NAME__)c\" \
-		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)c\" \
-		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)C\" \
+		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)C\" \
+		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)c\" \
 		-o $@ $<
 
 install: $(__NAME__) installdirs
