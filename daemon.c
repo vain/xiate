@@ -30,6 +30,7 @@ struct term_options
     char *title;
     char *wm_class;
     char *wm_name;
+    GInputStream *sock_stream;
 };
 
 
@@ -41,6 +42,7 @@ static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
 static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
+static void sig_window_destroy(GtkWidget *, gpointer);
 static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
 static void sig_window_title_changed(VteTerminal *, gpointer);
 static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
@@ -317,6 +319,19 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 }
 
 void
+sig_window_destroy(GtkWidget *widget, gpointer data)
+{
+    GInputStream *sock_stream = (GInputStream *)data;
+
+    (void)widget;
+
+    /* Close this client's socket to signal the client program that the
+     * window has been closed. */
+    g_input_stream_close(sock_stream, NULL, NULL);
+    g_object_unref(sock_stream);
+}
+
+void
 sig_window_resize(VteTerminal *term, guint width, guint height, gpointer data)
 {
     term_set_size((GtkWidget *)data, term, width, height);
@@ -335,7 +350,8 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer data)
 {
     GInputStream *s;
-    gsize msg_size = 4096, i, sz_read;
+    gssize read_now;
+    gsize msg_size = 4096, i, sz_read = 0;
     GSList *args = NULL;
     struct term_options *to = NULL;
     guint args_i;
@@ -365,13 +381,43 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     to->wm_name = __NAME__;
 
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-    if (!g_input_stream_read_all(s, to->message, msg_size, &sz_read, NULL, NULL))
-        goto garbled;
+
+    /* We'll keep the socket open until the window has been closed. */
+    g_object_ref(s);
+    to->sock_stream = s;
+
+    /* The client is expected to send at least "S\000F\000", so we read
+     * until we see a "\000F\000". In between, there can be any number
+     * of options, each of which must be terminated by a NUL byte. */
+    do
+    {
+        read_now = g_input_stream_read(s,
+                                       to->message + sz_read,
+                                       msg_size - sz_read,
+                                       NULL, NULL);
+        if (read_now == 0 || read_now == -1)
+            goto garbled;
+
+        sz_read += read_now;
+    } while (sz_read < 3 ||
+             to->message[(sz_read - 1) - 2] != 0   ||
+             to->message[(sz_read - 1) - 1] != 'F' ||
+             to->message[(sz_read - 1)    ] != 0);
 
     for (i = 0; i < sz_read; i++)
     {
         switch (to->message[i])
         {
+            case 'S':
+            case 'F':
+                /* This signals the start or end of the client's
+                 * message. We just check here if the message format is
+                 * okay. */
+                i++;
+                if (i >= sz_read || to->message[i] != 0)
+                    goto garbled;
+                break;
+
             case 'A':
                 /* After the 'A' follows a NUL terminated string. Add
                  * this string to our list of arguments. */
@@ -392,6 +438,9 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
             case 'H':
                 to->hold = TRUE;
+                i++;
+                if (i >= sz_read || to->message[i] != 0)
+                    goto garbled;
                 break;
 
             case 'O':
@@ -463,6 +512,8 @@ garbled:
         g_slist_free(args);
     if (to && to->message)
         free(to->message);
+    if (to && to->sock_stream)
+        g_object_unref(to->sock_stream);
     if (to)
         free(to);
     return TRUE;
@@ -474,11 +525,13 @@ socket_listen(char *suffix)
     GSocketService *sock;
     GSocketAddress *sa;
     GError *err = NULL;
-    char *name, *path;
+    char *path;
 
-    name = g_strdup_printf("%s-%s", __NAME__, suffix);
-    path = g_build_filename(g_get_user_runtime_dir(), name, NULL);
-    g_free(name);
+    path = g_strdup_printf("/tmp/%s-%d", __NAME__, getuid());
+    mkdir(path, S_IRWXU);
+    g_free(path);
+
+    path = g_strdup_printf("/tmp/%s-%d/%s", __NAME__, getuid(), suffix);
     unlink(path);
     sa = g_unix_socket_address_new(path);
     g_free(path);
@@ -506,11 +559,15 @@ term_new(gpointer data)
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(win), to->title);
     gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
+    g_signal_connect(G_OBJECT(win), "destroy",
+                     G_CALLBACK(sig_window_destroy), to->sock_stream);
 
     term = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(win), term);
     setup_term(win, term, to);
 
+    /* Free the term_options struct and all its members, but do not
+     * unref the sock_stream. We still need it until the window closes. */
     if (to->argv)
         free(to->argv);
     free(to->message);
