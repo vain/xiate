@@ -15,27 +15,21 @@
 #include "config.h"
 
 
-struct exit_options
-{
-    gboolean hold;
-    GtkWidget *win;
-};
-
-struct term_options
+struct Client
 {
     char **argv;
     char *cwd;
     gboolean hold;
-    char *message;
     char *title;
     char *wm_class;
     char *wm_name;
+    GtkWidget *win;
     GInputStream *sock_stream;
 };
 
 
 static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
-static void setup_term(GtkWidget *, GtkWidget *, struct term_options *);
+static void setup_term(GtkWidget *, struct Client *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
@@ -69,7 +63,7 @@ cb_spawn_async(VteTerminal *term, GPid pid, GError *err, gpointer data)
 }
 
 void
-setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
+setup_term(GtkWidget *term, struct Client *c)
 {
     static char *args_default[] = { NULL, NULL, NULL };
     char **args_use;
@@ -81,11 +75,10 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     VteRegex *url_vregex = NULL;
     GError *err = NULL;
     GSpawnFlags spawn_flags;
-    struct exit_options *eo = NULL;
 
-    if (to->argv != NULL)
+    if (c->argv != NULL)
     {
-        args_use = to->argv;
+        args_use = c->argv;
         spawn_flags = G_SPAWN_SEARCH_PATH;
     }
     else
@@ -106,12 +99,12 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
 
     /* Appearance. */
     term_set_font(NULL, VTE_TERMINAL(term), 0);
-    gtk_widget_show_all(win);
+    gtk_widget_show_all(c->win);
 
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
     vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                               GTK_WINDOW(win));
+                                               GTK_WINDOW(c->win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
@@ -155,39 +148,27 @@ setup_term(GtkWidget *win, GtkWidget *term, struct term_options *to)
     }
 
     /* Signals. */
-    eo = calloc(1, sizeof (struct exit_options));
-    if (!eo)
-    {
-        perror(__NAME__": calloc for 'eo'");
-        fprintf(stderr, __NAME__": Did not connect signal handler for "
-                        "'child-exited'\n");
-    }
-    else
-    {
-        eo->hold = to->hold;
-        eo->win = win;
-        g_signal_connect(G_OBJECT(term), "child-exited",
-                         G_CALLBACK(sig_child_exited), eo);
-    }
     g_signal_connect(G_OBJECT(term), "bell",
-                     G_CALLBACK(sig_bell), win);
+                     G_CALLBACK(sig_bell), c->win);
     g_signal_connect(G_OBJECT(term), "button-press-event",
                      G_CALLBACK(sig_button_press), NULL);
+    g_signal_connect(G_OBJECT(term), "child-exited",
+                     G_CALLBACK(sig_child_exited), c);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
-                     G_CALLBACK(sig_decrease_font_size), win);
+                     G_CALLBACK(sig_decrease_font_size), c->win);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
-                     G_CALLBACK(sig_increase_font_size), win);
+                     G_CALLBACK(sig_increase_font_size), c->win);
     g_signal_connect(G_OBJECT(term), "key-press-event",
-                     G_CALLBACK(sig_key_press), win);
+                     G_CALLBACK(sig_key_press), c->win);
     g_signal_connect(G_OBJECT(term), "resize-window",
-                     G_CALLBACK(sig_window_resize), win);
+                     G_CALLBACK(sig_window_resize), c->win);
     g_signal_connect(G_OBJECT(term), "window-title-changed",
-                     G_CALLBACK(sig_window_title_changed), win);
+                     G_CALLBACK(sig_window_title_changed), c->win);
 
     /* Spawn child. */
-    vte_terminal_spawn_async(VTE_TERMINAL(term), VTE_PTY_DEFAULT, to->cwd,
+    vte_terminal_spawn_async(VTE_TERMINAL(term), VTE_PTY_DEFAULT, c->cwd,
                              args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
-                             NULL, cb_spawn_async, win);
+                             NULL, cb_spawn_async, c->win);
 }
 
 void
@@ -252,21 +233,19 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
-    struct exit_options *eo = (struct exit_options *)data;
+    struct Client *c = (struct Client *)data;
     GdkRGBA c_background_gdk;
 
     (void)status;
 
-    if (eo->hold)
+    if (c->hold)
     {
         gdk_rgba_parse(&c_background_gdk, c_background);
         vte_terminal_set_color_cursor(term, &c_background_gdk);
-        gtk_window_set_title(GTK_WINDOW(eo->win), __NAME__" - CHILD HAS QUIT");
+        gtk_window_set_title(GTK_WINDOW(c->win), __NAME__" - CHILD HAS QUIT");
     }
     else
-        gtk_widget_destroy(eo->win);
-
-    free(eo);
+        gtk_widget_destroy(c->win);
 }
 
 void
@@ -321,14 +300,17 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_window_destroy(GtkWidget *widget, gpointer data)
 {
-    GInputStream *sock_stream = (GInputStream *)data;
+    struct Client *c = (struct Client *)data;
 
     (void)widget;
 
     /* Close this client's socket to signal the client program that the
      * window has been closed. */
-    g_input_stream_close(sock_stream, NULL, NULL);
-    g_object_unref(sock_stream);
+    g_input_stream_close(c->sock_stream, NULL, NULL);
+    g_object_unref(c->sock_stream);
+
+    free(c->argv);
+    free(c);
 }
 
 void
@@ -353,38 +335,37 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     gssize read_now;
     gsize msg_size = 4096, i, sz_read = 0;
     GSList *args = NULL;
-    struct term_options *to = NULL;
+    struct Client *c = NULL;
     guint args_i;
     char option;
     char *value;
+    char *message = NULL;
 
     (void)data;
     (void)service;
     (void)source_object;
 
-    to = calloc(1, sizeof (struct term_options));
-    if (!to)
+    c = calloc(1, sizeof (struct Client));
+    if (!c)
     {
-        perror(__NAME__": calloc for 'to'");
+        perror(__NAME__": calloc for 'c'");
         goto garbled;
     }
-    to->cwd = NULL;
-    to->hold = FALSE;
-    to->message = calloc(1, msg_size);
-    if (!to->message)
+    message = calloc(1, msg_size);
+    if (!message)
     {
-        perror(__NAME__": calloc for 'to->message'");
+        perror(__NAME__": calloc for 'message'");
         goto garbled;
     }
-    to->title = __NAME__;
-    to->wm_class = __NAME_CAPITALIZED__;
-    to->wm_name = __NAME__;
+    c->title = __NAME__;
+    c->wm_class = __NAME_CAPITALIZED__;
+    c->wm_name = __NAME__;
 
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
 
     /* We'll keep the socket open until the window has been closed. */
     g_object_ref(s);
-    to->sock_stream = s;
+    c->sock_stream = s;
 
     /* The client is expected to send at least "S\000F\000", so we read
      * until we see a "\000F\000". In between, there can be any number
@@ -392,7 +373,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     do
     {
         read_now = g_input_stream_read(s,
-                                       to->message + sz_read,
+                                       message + sz_read,
                                        msg_size - sz_read,
                                        NULL, NULL);
         if (read_now == 0 || read_now == -1)
@@ -400,13 +381,13 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
         sz_read += read_now;
     } while (sz_read < 3 ||
-             to->message[(sz_read - 1) - 2] != 0   ||
-             to->message[(sz_read - 1) - 1] != 'F' ||
-             to->message[(sz_read - 1)    ] != 0);
+             message[(sz_read - 1) - 2] != 0   ||
+             message[(sz_read - 1) - 1] != 'F' ||
+             message[(sz_read - 1)    ] != 0);
 
     for (i = 0; i < sz_read; i++)
     {
-        switch (to->message[i])
+        switch (message[i])
         {
             case 'S':
             case 'F':
@@ -414,7 +395,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                  * message. We just check here if the message format is
                  * okay. */
                 i++;
-                if (i >= sz_read || to->message[i] != 0)
+                if (i >= sz_read || message[i] != 0)
                     goto garbled;
                 break;
 
@@ -424,12 +405,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                args = g_slist_append(args, &to->message[i]);
+                args = g_slist_append(args, &message[i]);
 
                 /* Jump to the NUL byte of the string, so that the next
                  * iteration of the outer for-loop will jump to the next
                  * byte after that NUL. */
-                while (i < sz_read && to->message[i] != 0)
+                while (i < sz_read && message[i] != 0)
                     i++;
                 if (i == sz_read)
                     goto garbled;
@@ -437,9 +418,9 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 break;
 
             case 'H':
-                to->hold = TRUE;
+                c->hold = TRUE;
                 i++;
-                if (i >= sz_read || to->message[i] != 0)
+                if (i >= sz_read || message[i] != 0)
                     goto garbled;
                 break;
 
@@ -450,12 +431,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                option = to->message[i];
+                option = message[i];
 
                 i++;
                 if (i >= sz_read)
                     goto garbled;
-                value = &to->message[i];
+                value = &message[i];
 
                 if (option == 'C' || option == 'c' || option == 'n' ||
                     option == 't')
@@ -463,19 +444,19 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
                     /* Jump to the NUL byte of the string, so that the
                      * next iteration of the outer for-loop will jump to
                      * the next byte after that NUL. */
-                    while (i < sz_read && to->message[i] != 0)
+                    while (i < sz_read && message[i] != 0)
                         i++;
                     if (i == sz_read)
                         goto garbled;
 
                     if (option == 'C')
-                        to->cwd = value;
+                        c->cwd = value;
                     if (option == 'c')
-                        to->wm_class = value;
+                        c->wm_class = value;
                     if (option == 'n')
-                        to->wm_name = value;
+                        c->wm_name = value;
                     if (option == 't')
-                        to->title = value;
+                        c->title = value;
                 }
                 else
                     goto garbled;
@@ -489,19 +470,21 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
 
     if (args)
     {
-        to->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
-        if (!to->argv)
-            perror(__NAME__": calloc for 'to->argv'");
+        c->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
+        if (!c->argv)
+            perror(__NAME__": calloc for 'c->argv'");
         else
         {
             for (args_i = 0; args_i < g_slist_length(args); args_i++)
-                to->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
+                c->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
         }
         g_slist_free(args);
     }
 
+    free(message);
+
     /* We're not on the main thread. */
-    g_main_context_invoke(NULL, term_new, to);
+    g_main_context_invoke(NULL, term_new, c);
 
     /* Other handlers must not be called. */
     return TRUE;
@@ -510,12 +493,12 @@ garbled:
     fprintf(stderr, __NAME__": Garbled message or memory error, aborting.\n");
     if (args)
         g_slist_free(args);
-    if (to && to->message)
-        free(to->message);
-    if (to && to->sock_stream)
-        g_object_unref(to->sock_stream);
-    if (to)
-        free(to);
+    if (message)
+        free(message);
+    if (c && c->sock_stream)
+        g_object_unref(c->sock_stream);
+    if (c)
+        free(c);
     return TRUE;
 }
 
@@ -553,25 +536,17 @@ socket_listen(char *suffix)
 gboolean
 term_new(gpointer data)
 {
-    GtkWidget *term, *win;
-    struct term_options *to = (struct term_options *)data;
+    struct Client *c = (struct Client *)data;
+    GtkWidget *term;
 
-    win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(win), to->title);
-    gtk_window_set_wmclass(GTK_WINDOW(win), to->wm_name, to->wm_class);
-    g_signal_connect(G_OBJECT(win), "destroy",
-                     G_CALLBACK(sig_window_destroy), to->sock_stream);
+    c->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(c->win), c->title);
+    gtk_window_set_wmclass(GTK_WINDOW(c->win), c->wm_name, c->wm_class);
+    g_signal_connect(G_OBJECT(c->win), "destroy", G_CALLBACK(sig_window_destroy), c);
 
     term = vte_terminal_new();
-    gtk_container_add(GTK_CONTAINER(win), term);
-    setup_term(win, term, to);
-
-    /* Free the term_options struct and all its members, but do not
-     * unref the sock_stream. We still need it until the window closes. */
-    if (to->argv)
-        free(to->argv);
-    free(to->message);
-    free(to);
+    gtk_container_add(GTK_CONTAINER(c->win), term);
+    setup_term(term, c);
 
     /* Remove this source. */
     return FALSE;
