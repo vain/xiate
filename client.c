@@ -54,7 +54,7 @@ main(int argc, char **argv)
     char *name = NULL;
     char *title = NULL;
     char *socket_suffix = "main";
-    char dummy_buf[1] = "";
+    unsigned char exit_code[1];
     int fd, i, try, max_tries = 10, exec_argi = argc;
     struct sockaddr_un addr = {0};
 
@@ -123,11 +123,10 @@ main(int argc, char **argv)
 
     write_cmd(fd, "F", "");
 
-    /* Try to read. This just blocks until the connection is closed,
-     * which will happen when the terminal window is closed, or until we
-     * get an error. */
-    read(fd, &dummy_buf, 1);
-    close(fd);
-
-    exit(EXIT_SUCCESS);
+    /* Try to read child's exit code. This blocks until the terminal
+     * window has been closed ("-hold" matters). */
+    if (read(fd, exit_code, 1) == 1)
+        exit(exit_code[0]);
+    else
+        exit(EXIT_FAILURE);
 }

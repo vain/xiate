@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <vte/vte.h>
 
@@ -25,7 +26,9 @@ struct Client
     char *wm_class;
     char *wm_name;
     GtkWidget *win;
-    GInputStream *sock_stream;
+    GIOStream *sock_stream;
+    gboolean has_child_exit_status;
+    gint child_exit_status;
 };
 
 
@@ -237,7 +240,8 @@ sig_child_exited(VteTerminal *term, gint status, gpointer data)
     struct Client *c = (struct Client *)data;
     GdkRGBA c_background_gdk;
 
-    (void)status;
+    c->has_child_exit_status = TRUE;
+    c->child_exit_status = status;
 
     if (c->hold)
     {
@@ -302,12 +306,46 @@ void
 sig_window_destroy(GtkWidget *widget, gpointer data)
 {
     struct Client *c = (struct Client *)data;
+    GOutputStream *os;
+    unsigned char exit_code_buffer[1];
 
     (void)widget;
 
-    /* Close this client's socket to signal the client program that the
-     * window has been closed. */
-    g_input_stream_close(c->sock_stream, NULL, NULL);
+    /* Figure out exit code of our child. We deal with the full status
+     * code as returned by wait(2) here, but there's no point in sending
+     * the full integer to the client, since we can't/won't try to fake
+     * stuff like "the child had a segfault". Just use the least
+     * significant 8 bits to get a "normal" exit code in the range of
+     * [0, 255]. This also makes socket handling easier, since we only
+     * ever send one byte. */
+    if (c->has_child_exit_status)
+    {
+        if (WIFEXITED(c->child_exit_status))
+            exit_code_buffer[0] = WEXITSTATUS(c->child_exit_status);
+        else if (WIFSIGNALED(c->child_exit_status))
+            exit_code_buffer[0] = WTERMSIG(c->child_exit_status);
+        else
+        {
+            fprintf(stderr, __NAME__": Child exited but neither WIFEXITED nor "
+                                    "WIFSIGNALED: %d\n", c->child_exit_status);
+            exit_code_buffer[0] = 1;
+        }
+    }
+    else
+        /* If there is no child exit status, it means the user has
+         * forcibly closed the terminal window. We interpret this as
+         * "ABANDON MISSION!!1!", so we won't return an exit code of 0
+         * in this case.
+         *
+         * This will also happen if we fail to start the child in the
+         * first place. */
+        exit_code_buffer[0] = 1;
+
+    /* Send and then close this client's socket to signal the client
+     * program that the window has been closed. */
+    os = g_io_stream_get_output_stream(c->sock_stream);
+    g_output_stream_write(os, exit_code_buffer, 1, NULL, NULL);
+    g_io_stream_close(c->sock_stream, NULL, NULL);
     g_object_unref(c->sock_stream);
 
     free(c->argv);
@@ -365,8 +403,8 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
 
     /* We'll keep the socket open until the window has been closed. */
-    g_object_ref(s);
-    c->sock_stream = s;
+    c->sock_stream = G_IO_STREAM(connection);
+    g_object_ref(c->sock_stream);
 
     /* The client is expected to send at least "S\000F\000", so we read
      * until we see a "\000F\000". In between, there can be any number

@@ -1,4 +1,4 @@
-.TH xiatec 1 "2018-01-14" "xiate" "User Commands"
+.TH xiatec 1 "2018-01-20" "xiate" "User Commands"
 .\" --------------------------------------------------------------------
 .SH NAME
 xiatec \- terminal emulator (client)
@@ -45,6 +45,18 @@ with two dashes:
 \fBxiate\fP creates a UNIX socket on which it listens for incoming
 connections. This socket is named \(lqxiate-\fIsuffix\fP\(rq.
 \fIsuffix\fP defaults to \fBmain\fP.
+.\" --------------------------------------------------------------------
+.SH "EXIT STATUS"
+\fBxiatec\fP will return the exit code of the child program executed in
+the terminal. This is a number in the range of [\fB0\fP, \fB255\fP]. (In
+other words, if the child died from a signal, this information is lost
+and you will only get a \fBnon-zero\fP exit code here. Refer to
+\fBwait\fP(2) for more information on that topic.)
+.P
+A \fBnon-zero\fP exit code will be returned if there was any abnormal
+program termination, such as an error in communication with the server,
+an error while starting the child program, or if the user has forcibly
+closed the terminal window.
 .\" --------------------------------------------------------------------
 .SH LICENSE
 \fBxiatec\fP is released under the MIT license. See the accompanying
