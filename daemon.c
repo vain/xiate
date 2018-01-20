@@ -306,7 +306,7 @@ void
 sig_window_destroy(GtkWidget *widget, gpointer data)
 {
     struct Client *c = (struct Client *)data;
-    GOutputStream *os;
+    GOutputStream *out_stream;
     unsigned char exit_code_buffer[1];
 
     (void)widget;
@@ -343,8 +343,8 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
 
     /* Send and then close this client's socket to signal the client
      * program that the window has been closed. */
-    os = g_io_stream_get_output_stream(c->sock_stream);
-    g_output_stream_write(os, exit_code_buffer, 1, NULL, NULL);
+    out_stream = g_io_stream_get_output_stream(c->sock_stream);
+    g_output_stream_write(out_stream, exit_code_buffer, 1, NULL, NULL);
     g_io_stream_close(c->sock_stream, NULL, NULL);
     g_object_unref(c->sock_stream);
 
@@ -371,7 +371,7 @@ gboolean
 sock_incoming(GSocketService *service, GSocketConnection *connection,
               GObject *source_object, gpointer data)
 {
-    GInputStream *s;
+    GInputStream *in_stream;
     gssize read_now;
     gsize msg_size = 4096, i, sz_read = 0;
     GSList *args = NULL;
@@ -400,7 +400,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     c->wm_class = __NAME_CAPITALIZED__;
     c->wm_name = __NAME__;
 
-    s = g_io_stream_get_input_stream(G_IO_STREAM(connection));
+    in_stream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
 
     /* We'll keep the socket open until the window has been closed. */
     c->sock_stream = G_IO_STREAM(connection);
@@ -411,7 +411,7 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
      * of options, each of which must be terminated by a NUL byte. */
     do
     {
-        read_now = g_input_stream_read(s,
+        read_now = g_input_stream_read(in_stream,
                                        c->message + sz_read,
                                        msg_size - sz_read,
                                        NULL, NULL);
