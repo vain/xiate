@@ -35,6 +35,7 @@ struct Client
 static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
 static void handle_history(VteTerminal *);
 static void setup_term(GtkWidget *, struct Client *);
+static char *safe_emsg(GError *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
@@ -82,7 +83,7 @@ handle_history(VteTerminal *term)
     tmpfile = g_file_new_tmp(NULL, &io_stream, &err);
     if (tmpfile == NULL)
     {
-        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        fprintf(stderr, __NAME__": Could not write history: %s\n", safe_emsg(err));
         goto free_and_out;
     }
 
@@ -90,13 +91,13 @@ handle_history(VteTerminal *term)
     if (!vte_terminal_write_contents_sync(term, out_stream, VTE_WRITE_DEFAULT,
                                           NULL, &err))
     {
-        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        fprintf(stderr, __NAME__": Could not write history: %s\n", safe_emsg(err));
         goto free_and_out;
     }
 
     if (!g_io_stream_close(G_IO_STREAM(io_stream), NULL, NULL))
     {
-        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        fprintf(stderr, __NAME__": Could not write history: %s\n", safe_emsg(err));
         goto free_and_out;
     }
 
@@ -104,7 +105,7 @@ handle_history(VteTerminal *term)
     if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL, NULL, &err))
     {
         fprintf(stderr, __NAME__": Could not launch history handler: %s\n",
-                err->message);
+                safe_emsg(err));
     }
 
 free_and_out:
@@ -195,8 +196,7 @@ setup_term(GtkWidget *term, struct Client *c)
     url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
                                          PCRE2_MULTILINE | PCRE2_CASELESS, &err);
     if (url_vregex == NULL)
-        fprintf(stderr, "url_regex: %s\n",
-                err == NULL ? "<err is NULL>" : err->message);
+        fprintf(stderr, "url_regex: %s\n", safe_emsg(err));
     else
     {
         vte_terminal_match_add_regex(VTE_TERMINAL(term), url_vregex, 0);
@@ -225,6 +225,12 @@ setup_term(GtkWidget *term, struct Client *c)
     vte_terminal_spawn_async(VTE_TERMINAL(term), VTE_PTY_DEFAULT, c->cwd,
                              args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
                              NULL, cb_spawn_async, c->win);
+}
+
+char *
+safe_emsg(GError *err)
+{
+    return err == NULL ? "<GError is NULL>" : err->message;
 }
 
 void
@@ -269,7 +275,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                                        NULL, NULL, &err))
                     {
                         fprintf(stderr, __NAME__": Could not spawn hyperlink "
-                                "handler: %s\n", err->message);
+                                "handler: %s\n", safe_emsg(err));
                         g_error_free(err);
                     }
                     g_free(url);
@@ -622,7 +628,7 @@ socket_listen(char *suffix)
                                        G_SOCKET_PROTOCOL_DEFAULT,
                                        NULL, NULL, &err))
     {
-        fprintf(stderr, "Failed to set up socket: '%s'\n", err->message);
+        fprintf(stderr, "Failed to set up socket: '%s'\n", safe_emsg(err));
         exit(EXIT_FAILURE);
     }
 
