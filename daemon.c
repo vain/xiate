@@ -115,8 +115,7 @@ free_and_out:
         g_object_unref(io_stream);
     if (tmpfile != NULL)
         g_object_unref(tmpfile);
-    if (err != NULL)
-        g_error_free(err);
+    g_clear_error(&err);
 }
 
 void
@@ -196,7 +195,10 @@ setup_term(GtkWidget *term, struct Client *c)
     url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
                                          PCRE2_MULTILINE | PCRE2_CASELESS, &err);
     if (url_vregex == NULL)
+    {
         fprintf(stderr, "url_regex: %s\n", safe_emsg(err));
+        g_clear_error(&err);
+    }
     else
     {
         vte_terminal_match_add_regex(VTE_TERMINAL(term), url_vregex, 0);
@@ -276,7 +278,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                     {
                         fprintf(stderr, __NAME__": Could not spawn hyperlink "
                                 "handler: %s\n", safe_emsg(err));
-                        g_error_free(err);
+                        g_clear_error(&err);
                     }
                     g_free(url);
                     return FALSE;
