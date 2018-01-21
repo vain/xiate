@@ -47,16 +47,13 @@ connections. This socket is named \(lqxiate-\fIsuffix\fP\(rq.
 \fIsuffix\fP defaults to \fBmain\fP.
 .\" --------------------------------------------------------------------
 .SH "EXIT STATUS"
-\fBxiatec\fP will return the exit code of the child program executed in
-the terminal. This is a number in the range of [\fB0\fP, \fB255\fP]. (In
-other words, if the child died from a signal, this information is lost
-and you will only get a \fBnon-zero\fP exit code here. Refer to
-\fBwait\fP(2) for more information on that topic.)
+\fBxiatec\fP will exit with \fB0\fP if the child program running in the
+terminal has exited cleanly. It will exit with \fB1\fP if there was any
+error, or if the child exited with a non-zero exit code, or if the user
+forcibly closed the terminal window.
 .P
-A \fBnon-zero\fP exit code will be returned if there was any abnormal
-program termination, such as an error in communication with the server,
-an error while starting the child program, or if the user has forcibly
-closed the terminal window.
+It is not possible to get the child's original exit code, because you
+can't tell it apart from internal xiate errors anyway.
 .\" --------------------------------------------------------------------
 .SH LICENSE
 \fBxiatec\fP is released under the MIT license. See the accompanying

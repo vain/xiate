@@ -14,9 +14,10 @@ next
   - This requires a change in the protocol spoken between server and
     client. "H" now needs a NUL byte following it and the entire
     sequence must be enclosed in "S\000 .. F\000".
-  - xiatec will now report the exit code of the programm running in the
-    terminal. This requires another change in the protocol: The server
-    will send exactly one byte to the client, containing said exit code.
+  - xiatec will now exit with 0 if the child program terminated
+    successfully and with 1 otherwise. This requires another change in
+    the protocol: The server will send exactly one byte to the client,
+    containing said exit code.
   - Also, the client has been reimplemented in C, so the dependency on
     Bash and socat is gone.
   - Sockets now live in /tmp/xiate-$uid.

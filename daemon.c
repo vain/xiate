@@ -384,22 +384,18 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
     /* Figure out exit code of our child. We deal with the full status
      * code as returned by wait(2) here, but there's no point in sending
      * the full integer to the client, since we can't/won't try to fake
-     * stuff like "the child had a segfault". Just use the least
-     * significant 8 bits to get a "normal" exit code in the range of
-     * [0, 255]. This also makes socket handling easier, since we only
-     * ever send one byte. */
+     * stuff like "the child had a segfault" and it's not possible to
+     * discriminate between child exit codes and other errors related to
+     * xiate's internals (socket error, X11 died, something like that).
+     * So just pass 0 or 1 to our client. This also makes socket
+     * handling easier, since we only ever send one byte. */
     if (c->has_child_exit_status)
     {
-        if (WIFEXITED(c->child_exit_status))
-            exit_code_buffer[0] = WEXITSTATUS(c->child_exit_status);
-        else if (WIFSIGNALED(c->child_exit_status))
-            exit_code_buffer[0] = WTERMSIG(c->child_exit_status);
-        else
-        {
-            fprintf(stderr, __NAME__": Child exited but neither WIFEXITED nor "
-                                    "WIFSIGNALED: %d\n", c->child_exit_status);
+        /* This "if" clause has been borrowed from suckless st. */
+        if (!WIFEXITED(c->child_exit_status) || WEXITSTATUS(c->child_exit_status))
             exit_code_buffer[0] = 1;
-        }
+        else
+            exit_code_buffer[0] = 0;
     }
     else
         /* If there is no child exit status, it means the user has
