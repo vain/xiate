@@ -26,6 +26,9 @@ next
     command line arguments. This prevents accidents like running "xiate
     --suffix test" which would result in the server listening on the
     "main" socket.
+  - Ctrl+F dumps the terminal history to a file and calls a tool you
+    specify in config.h. This allows you to search through history or
+    save parts of it.
 
 v17.10  2017-10-18
   [Changed]

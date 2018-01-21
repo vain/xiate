@@ -44,6 +44,17 @@ char *url_regex = "[a-z]+://[[:graph:]]+";
  * https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda */
 char *hyperlink_handler = NULL;
 
+/* Set this to the path of a tool to handle history dumps.
+ *
+ * History dumps work like this: You press Ctrl+F to tell xiate to write
+ * the entire history of the terminal to a temporary file. Once that's
+ * done, your tool will be called with the path to that file as first
+ * argument.
+ *
+ * What you do with this file is entirely up to you. It's also your job
+ * to clean it up. */
+char *history_handler = NULL;
+
 /* Background color of text under the cursor. There's a special mode:
  * "If NULL, text under the cursor will be drawn with foreground and
  * background colors reversed." */

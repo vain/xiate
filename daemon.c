@@ -33,6 +33,7 @@ struct Client
 
 
 static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
+static void handle_history(VteTerminal *);
 static void setup_term(GtkWidget *, struct Client *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
@@ -64,6 +65,57 @@ cb_spawn_async(VteTerminal *term, GPid pid, GError *err, gpointer data)
         fprintf(stderr, __NAME__": Spawning child failed: %s\n", err->message);
         gtk_widget_destroy(win);
     }
+}
+
+void
+handle_history(VteTerminal *term)
+{
+    GFile *tmpfile = NULL;
+    GFileIOStream *io_stream = NULL;
+    GOutputStream *out_stream = NULL;
+    GError *err = NULL;
+    char *argv[] = { history_handler, NULL, NULL };
+
+    if (history_handler == NULL)
+        return;
+
+    tmpfile = g_file_new_tmp(NULL, &io_stream, &err);
+    if (tmpfile == NULL)
+    {
+        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        goto free_and_out;
+    }
+
+    out_stream = g_io_stream_get_output_stream(G_IO_STREAM(io_stream));
+    if (!vte_terminal_write_contents_sync(term, out_stream, VTE_WRITE_DEFAULT,
+                                          NULL, &err))
+    {
+        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        goto free_and_out;
+    }
+
+    if (!g_io_stream_close(G_IO_STREAM(io_stream), NULL, NULL))
+    {
+        fprintf(stderr, __NAME__": Could not write history: %s\n", err->message);
+        goto free_and_out;
+    }
+
+    argv[1] = g_file_get_path(tmpfile);
+    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL, NULL, &err))
+    {
+        fprintf(stderr, __NAME__": Could not launch history handler: %s\n",
+                err->message);
+    }
+
+free_and_out:
+    if (argv[1] != NULL)
+        g_free(argv[1]);
+    if (io_stream != NULL)
+        g_object_unref(io_stream);
+    if (tmpfile != NULL)
+        g_object_unref(tmpfile);
+    if (err != NULL)
+        g_error_free(err);
 }
 
 void
@@ -275,6 +327,9 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     {
         switch (((GdkEventKey *)event)->keyval)
         {
+            case GDK_KEY_F:
+                handle_history(term);
+                return TRUE;
             case GDK_KEY_C:
                 vte_terminal_copy_clipboard_format(term, VTE_FORMAT_TEXT);
                 return TRUE;
