@@ -52,7 +52,7 @@ char *hyperlink_handler = NULL;
  * argument.
  *
  * What you do with this file is entirely up to you. It's also your job
- * to clean it up. */
+ * to remove it once you're done with it. */
 char *history_handler = NULL;
 
 /* Background color of text under the cursor. There's a special mode:
