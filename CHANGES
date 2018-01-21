@@ -20,6 +20,8 @@ next
   - Also, the client has been reimplemented in C, so the dependency on
     Bash and socat is gone.
   - Sockets now live in /tmp/xiate-$uid.
+
+  [Added]
   - xiate (the daemon) now aborts if there is an unexpected number of
     command line arguments. This prevents accidents like running "xiate
     --suffix test" which would result in the server listening on the
