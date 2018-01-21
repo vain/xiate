@@ -281,7 +281,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                         g_clear_error(&err);
                     }
                     g_free(url);
-                    return FALSE;
+                    return TRUE;
                 }
             }
 
@@ -294,6 +294,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                     gtk_clipboard_set_text(clip, url, -1);
                 g_free(url);
             }
+            return TRUE;
         }
     }
 
