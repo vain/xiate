@@ -46,10 +46,10 @@ char *hyperlink_handler = NULL;
 
 /* Set this to the path of a tool to handle history dumps.
  *
- * History dumps work like this: You press Ctrl+F to tell xiate to write
- * the entire history of the terminal to a temporary file. Once that's
- * done, your tool will be called with the path to that file as first
- * argument.
+ * History dumps work like this: You press Ctrl+Shift+F to tell xiate to
+ * write the entire history of the terminal to a temporary file. Once
+ * that's done, your tool will be called with the path to that file as
+ * first argument.
  *
  * What you do with this file is entirely up to you. It's also your job
  * to remove it once you're done with it. */
