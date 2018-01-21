@@ -249,6 +249,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     GtkClipboard *clip = NULL;
     char *url = NULL;
     char *argv[] = { hyperlink_handler, NULL, NULL };
+    GError *err = NULL;
 
     (void)data;
 
@@ -264,8 +265,13 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                 if (url != NULL)
                 {
                     argv[1] = url;
-                    g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
-                                  NULL, NULL, NULL);
+                    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
+                                       NULL, NULL, &err))
+                    {
+                        fprintf(stderr, __NAME__": Could not spawn hyperlink "
+                                "handler: %s\n", err->message);
+                        g_error_free(err);
+                    }
                     g_free(url);
                     return FALSE;
                 }
