@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v18.01  2018-01-28
   [Fixed]
   - There was a race condition in the communication between server and
     client. Depending on your machine (or its current load), the server
