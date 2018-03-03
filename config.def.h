@@ -27,7 +27,7 @@ char *fonts[] = {
  * infinite scrolling. Keep the memory footprint in mind, though. */
 guint scrollback_lines = 50000;
 
-/* This regular expression is used to match URLs. You can easily spot
+/* This regular expression is used to match links. You can easily spot
  * them by hovering over them with your mouse. Use your right mouse
  * button to invoke the link handler (defined below). */
 char *link_regex = "[a-z]+://[[:graph:]]+";
