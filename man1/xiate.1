@@ -38,7 +38,9 @@ in \fIconfig.h\fP. This also resets the font size.
 .TP
 \fBCtrl + Shift + F\fP
 Dumps the terminal history to a file and calls a tool you specified in
-\fIconfig.h\fP.
+\fIconfig.h\fP. The name of the tool defaults to
+\fBxiate-history-handler\fP and it will be looked for in your
+$\fIPATH\fP.
 .TP
 \fBCtrl + Shift + C\fP
 Copy currently selected text into clipboard.
@@ -48,10 +50,12 @@ Paste from clipboard.
 .TP
 \fBRight mouse button\fP
 When hovering over links, you can use this button to invoke your link
-handler. The name of this tool is defined in \fIconfig.h\fP.
-\fBargv[1]\fP will be set to \fBexplicit\fP for explicit hyperlinks or
-to \fBmatched\fP if a link has been detected via the regular expression
-(also see the comments in \fIconfig.h\fP).
+handler. The name of this tool is defined in \fIconfig.h\fP. It defaults
+to \fBxiate-link-handler\fP and it will be looked for in your
+$\fIPATH\fP. \fBargv[1]\fP will be set to \fBexplicit\fP for explicit
+hyperlinks or to \fBmatched\fP if a link has been detected via the
+regular expression (also see the comments in \fIconfig.h\fP).
+\fBargv[2]\fP will contain the actual link.
 .\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .P
