@@ -46,8 +46,9 @@ char *link_regex = "[a-z]+://[[:graph:]]+";
  * "match" will be used for links that have been found using
  * "link_regex" as defined above.
  *
- * If you set this to NULL, no action will be taken. */
-char *link_handler = NULL;
+ * You don't need to specify an absolute path. The tool will be looked
+ * for in your $PATH. */
+char *link_handler = "xiate-link-handler";
 
 /* Set this to the path of a tool to handle history dumps.
  *
@@ -57,8 +58,11 @@ char *link_handler = NULL;
  * first argument.
  *
  * What you do with this file is entirely up to you. It's also your job
- * to remove it once you're done with it. */
-char *history_handler = NULL;
+ * to remove it once you're done with it.
+ *
+ * You don't need to specify an absolute path. The tool will be looked
+ * for in your $PATH. */
+char *history_handler = "xiate-history-handler";
 
 /* Background color of text under the cursor. There's a special mode:
  * "If NULL, text under the cursor will be drawn with foreground and

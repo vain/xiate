@@ -76,6 +76,7 @@ handle_history(VteTerminal *term)
     GOutputStream *out_stream = NULL;
     GError *err = NULL;
     char *argv[] = { history_handler, NULL, NULL };
+    GSpawnFlags spawn_flags = G_SPAWN_DEFAULT | G_SPAWN_SEARCH_PATH;
 
     if (history_handler == NULL)
         return;
@@ -102,7 +103,7 @@ handle_history(VteTerminal *term)
     }
 
     argv[1] = g_file_get_path(tmpfile);
-    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL, NULL, &err))
+    if (!g_spawn_async(NULL, argv, NULL, spawn_flags, NULL, NULL, NULL, &err))
     {
         fprintf(stderr, __NAME__": Could not launch history handler: %s\n",
                 safe_emsg(err));
@@ -257,6 +258,7 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     char *argv[] = { link_handler, NULL, NULL, NULL };
     GError *err = NULL;
     gboolean retval = FALSE;
+    GSpawnFlags spawn_flags = G_SPAWN_DEFAULT | G_SPAWN_SEARCH_PATH;
 
     (void)data;
 
@@ -278,8 +280,8 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
             if (url != NULL)
             {
                 argv[2] = url;
-                if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
-                                   NULL, NULL, &err))
+                if (!g_spawn_async(NULL, argv, NULL, spawn_flags, NULL, NULL,
+                                   NULL, &err))
                 {
                     fprintf(stderr, __NAME__": Could not spawn link handler: "
                             "%s\n", safe_emsg(err));
