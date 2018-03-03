@@ -8,6 +8,9 @@ next
   - "hyperlink_handler" has been replaced by "link_handler". It will be
     called for explicit hyperlinks as before, but also for plain text
     links that have been detected by your regex.
+  - The hardcoded default of copying links to the X11 clipboard is gone.
+    If you want this functionality, you can use a tool like xclip in
+    your link handler.
 
 v18.01  2018-01-28
   [Fixed]
