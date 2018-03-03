@@ -47,8 +47,11 @@ Copy currently selected text into clipboard.
 Paste from clipboard.
 .TP
 \fBRight mouse button\fP
-When hovering over URLs, you can use this button to copy the URL to your
-clipboard.
+When hovering over links, you can use this button to invoke your link
+handler. The name of this tool is defined in \fIconfig.h\fP.
+\fBargv[1]\fP will be set to \fBexplicit\fP for explicit hyperlinks or
+to \fBmatched\fP if a link has been detected via the regular expression
+(also see the comments in \fIconfig.h\fP).
 .\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .P
