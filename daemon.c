@@ -164,8 +164,7 @@ setup_term(GtkWidget *term, struct Client *c)
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
-    if (hyperlink_handler != NULL)
-        vte_terminal_set_allow_hyperlink(VTE_TERMINAL(term), TRUE);
+    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(term), TRUE);
 
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
@@ -192,11 +191,11 @@ setup_term(GtkWidget *term, struct Client *c)
         vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
     }
 
-    url_vregex = vte_regex_new_for_match(url_regex, strlen(url_regex),
+    url_vregex = vte_regex_new_for_match(link_regex, strlen(link_regex),
                                          PCRE2_MULTILINE | PCRE2_CASELESS, &err);
     if (url_vregex == NULL)
     {
-        fprintf(stderr, "url_regex: %s\n", safe_emsg(err));
+        fprintf(stderr, "link_regex: %s\n", safe_emsg(err));
         g_clear_error(&err);
     }
     else
@@ -254,10 +253,10 @@ sig_bell(VteTerminal *term, gpointer data)
 gboolean
 sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-    GtkClipboard *clip = NULL;
     char *url = NULL;
-    char *argv[] = { hyperlink_handler, NULL, NULL };
+    char *argv[] = { link_handler, NULL, NULL, NULL };
     GError *err = NULL;
+    gboolean retval = FALSE;
 
     (void)data;
 
@@ -265,40 +264,35 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
     {
         if (((GdkEventButton *)event)->button == 3)
         {
-            /* Explicit hyperlinks take precedence over potential URL
-             * matches. */
-            if (hyperlink_handler != NULL)
+            if ((url = vte_terminal_hyperlink_check_event(VTE_TERMINAL(widget),
+                                                          event)) != NULL)
             {
-                url = vte_terminal_hyperlink_check_event(VTE_TERMINAL(widget), event);
-                if (url != NULL)
-                {
-                    argv[1] = url;
-                    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
-                                       NULL, NULL, &err))
-                    {
-                        fprintf(stderr, __NAME__": Could not spawn hyperlink "
-                                "handler: %s\n", safe_emsg(err));
-                        g_clear_error(&err);
-                    }
-                    g_free(url);
-                    return TRUE;
-                }
+                argv[1] = "explicit";
+            }
+            else if ((url = vte_terminal_match_check_event(VTE_TERMINAL(widget),
+                                                           event, NULL)) != NULL)
+            {
+                argv[1] = "match";
             }
 
-            clip = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-            url = vte_terminal_match_check_event(VTE_TERMINAL(widget),
-                                                 event, NULL);
             if (url != NULL)
             {
-                if (clip != NULL)
-                    gtk_clipboard_set_text(clip, url, -1);
-                g_free(url);
+                argv[2] = url;
+                if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL,
+                                   NULL, NULL, &err))
+                {
+                    fprintf(stderr, __NAME__": Could not spawn link handler: "
+                            "%s\n", safe_emsg(err));
+                    g_clear_error(&err);
+                }
+                else
+                    retval = TRUE;
             }
-            return TRUE;
         }
     }
 
-    return FALSE;
+    g_free(url);
+    return retval;
 }
 
 void
