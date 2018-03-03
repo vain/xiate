@@ -78,9 +78,6 @@ handle_history(VteTerminal *term)
     char *argv[] = { history_handler, NULL, NULL };
     GSpawnFlags spawn_flags = G_SPAWN_DEFAULT | G_SPAWN_SEARCH_PATH;
 
-    if (history_handler == NULL)
-        return;
-
     tmpfile = g_file_new_tmp(NULL, &io_stream, &err);
     if (tmpfile == NULL)
     {
