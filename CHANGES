@@ -1,5 +1,14 @@
 Release history for xiate
 
+next
+  [Changed]
+  - It is no longer possible to set handler paths in config.h to NULL.
+  - Handlers ("link_handler" and "history_handler") will now be searched
+    for in your $PATH.
+  - "hyperlink_handler" has been replaced by "link_handler". It will be
+    called for explicit hyperlinks as before, but also for plain text
+    links that have been detected by your regex.
+
 v18.01  2018-01-28
   [Fixed]
   - There was a race condition in the communication between server and
