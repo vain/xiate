@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v18.03  2018-03-17
   [Changed]
   - It is no longer possible to set handler paths in config.h to NULL.
   - Handlers ("link_handler" and "history_handler") will now be searched
