@@ -157,8 +157,6 @@ setup_term(GtkWidget *term, struct Client *c)
 
     vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
     vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
-    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                               GTK_WINDOW(c->win));
     vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
 
@@ -346,8 +344,6 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
                 return TRUE;
             case GDK_KEY_KP_0:
                 vte_terminal_set_font_scale(term, 1);
-                vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                                           GTK_WINDOW(win));
                 return TRUE;
 
             case GDK_KEY_KP_1: term_set_font(win, term, 0); return TRUE;
@@ -668,10 +664,6 @@ term_set_font(GtkWidget *win, VteTerminal *term, size_t index)
     vte_terminal_set_font_scale(term, 1);
 
     term_set_size(win, term, width, height);
-
-    if (win != NULL)
-        vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                                   GTK_WINDOW(win));
 }
 
 void
@@ -687,8 +679,6 @@ term_set_font_scale(GtkWidget *win, VteTerminal *term, gdouble mult)
     s *= mult;
     vte_terminal_set_font_scale(term, s);
     term_set_size(win, term, width, height);
-    vte_terminal_set_geometry_hints_for_window(VTE_TERMINAL(term),
-                                               GTK_WINDOW(win));
 }
 
 void
