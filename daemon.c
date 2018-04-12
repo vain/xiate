@@ -41,6 +41,7 @@ static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_child_exited(VteTerminal *, gint, gpointer);
 static void sig_decrease_font_size(VteTerminal *, gpointer);
 static void sig_increase_font_size(VteTerminal *, gpointer);
+static void sig_hyperlink_changed(VteTerminal *, gchar *, GdkRectangle *, gpointer);
 static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_window_destroy(GtkWidget *, gpointer);
 static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
@@ -209,6 +210,8 @@ setup_term(GtkWidget *term, struct Client *c)
                      G_CALLBACK(sig_child_exited), c);
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), c->win);
+    g_signal_connect(G_OBJECT(term), "hyperlink-hover-uri-changed",
+                     G_CALLBACK(sig_hyperlink_changed), NULL);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), c->win);
     g_signal_connect(G_OBJECT(term), "key-press-event",
@@ -321,6 +324,22 @@ void
 sig_increase_font_size(VteTerminal *term, gpointer data)
 {
     term_set_font_scale((GtkWidget *)data, term, 1.1);
+}
+
+void
+sig_hyperlink_changed(VteTerminal *term, gchar *uri, GdkRectangle *bbox,
+                      gpointer data)
+{
+    (void)bbox;
+    (void)data;
+
+    if (uri == NULL)
+        gtk_widget_set_has_tooltip(GTK_WIDGET(term), FALSE);
+    else
+    {
+        gtk_widget_set_has_tooltip(GTK_WIDGET(term), TRUE);
+        gtk_widget_set_tooltip_text(GTK_WIDGET(term), uri);
+    }
 }
 
 gboolean
