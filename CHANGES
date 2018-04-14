@@ -5,6 +5,10 @@ next
   - When the mouse pointer hovers over an explicit hyperlink, xiate now
     shows a tooltip window that displays the link's target.
 
+  [Changed]
+  - Geometry hints will no longer be set on our top-level windows. This
+    functionality has been removed from GTK+.
+
 v18.03  2018-03-17
   [Changed]
   - It is no longer possible to set handler paths in config.h to NULL.
