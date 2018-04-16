@@ -13,6 +13,9 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
+/* 2083 is VTE's limit. */
+#define HYPERLINK_TARGET_SIZE (2083 + 1)
+
 #include "config.h"
 
 
@@ -29,6 +32,7 @@ struct Client
     GIOStream *sock_stream;
     gboolean has_child_exit_status;
     gint child_exit_status;
+    gchar *tooltip;
 };
 
 
@@ -211,7 +215,7 @@ setup_term(GtkWidget *term, struct Client *c)
     g_signal_connect(G_OBJECT(term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), c->win);
     g_signal_connect(G_OBJECT(term), "hyperlink-hover-uri-changed",
-                     G_CALLBACK(sig_hyperlink_changed), NULL);
+                     G_CALLBACK(sig_hyperlink_changed), c);
     g_signal_connect(G_OBJECT(term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), c->win);
     g_signal_connect(G_OBJECT(term), "key-press-event",
@@ -330,15 +334,20 @@ void
 sig_hyperlink_changed(VteTerminal *term, gchar *uri, GdkRectangle *bbox,
                       gpointer data)
 {
+    struct Client *c = (struct Client *)data;
+
     (void)bbox;
-    (void)data;
 
     if (uri == NULL)
         gtk_widget_set_has_tooltip(GTK_WIDGET(term), FALSE);
     else
     {
-        gtk_widget_set_has_tooltip(GTK_WIDGET(term), TRUE);
-        gtk_widget_set_tooltip_text(GTK_WIDGET(term), uri);
+        /* uri points to a string owned by VTE and it can change after
+         * this handlers has finished. It is not 100% clear to me if GTK
+         * creates a copy of that string -- probably not. So, we better
+         * make one. */
+        g_strlcpy(c->tooltip, uri, HYPERLINK_TARGET_SIZE);
+        gtk_widget_set_tooltip_text(GTK_WIDGET(term), c->tooltip);
     }
 }
 
@@ -424,6 +433,7 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
 
     free(c->argv);
     free(c->message);
+    free(c->tooltip);
     free(c);
 }
 
@@ -468,6 +478,12 @@ sock_incoming(GSocketService *service, GSocketConnection *connection,
     if (c->message == NULL)
     {
         perror(__NAME__": calloc for 'c->message'");
+        goto garbled;
+    }
+    c->tooltip = calloc(1, HYPERLINK_TARGET_SIZE);
+    if (c->tooltip == NULL)
+    {
+        perror(__NAME__": calloc for 'c->tooltip'");
         goto garbled;
     }
     c->title = __NAME__;
