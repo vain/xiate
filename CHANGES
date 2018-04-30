@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v18.04  2018-04-30
   [Added]
   - When the mouse pointer hovers over an explicit hyperlink, xiate now
     shows a tooltip window that displays the link's target.
