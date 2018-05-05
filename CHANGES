@@ -1,5 +1,12 @@
 Release history for xiate
 
+next
+  [Changed]
+  - The client-server model has been removed. There's only one binary
+    called "xiate" now and it launches one terminal window. This change
+    has been done to be more resilient towards crashes (errors in xiate
+    itself or the libraries it uses).
+
 v18.04  2018-04-30
   [Added]
   - When the mouse pointer hovers over an explicit hyperlink, xiate now

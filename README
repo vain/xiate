@@ -33,15 +33,14 @@ To build the program and install it to /usr/local:
 Running
 -------
 
-For various reasons, xiate is split into two components: A daemon and a
-client. You first start the daemon:
+It's as simple as:
 
     $ xiate
 
-It connects to the current X11 display (according to $DISPLAY), but does
-not create any windows yet. It also creates a UNIX socket and waits for
-connections. Using a simple protocol, you can instruct xiate to actually
-launch a new terminal window and/or run a program:
+This launches one terminal window. There are no tabs.
 
-    $ xiatec
-    $ xiatec -e vim
+You can also run a program directly:
+
+    $ xiate -e vim
+
+There are some more command line arguments. Please refer to the manpage.

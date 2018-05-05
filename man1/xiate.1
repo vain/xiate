@@ -1,22 +1,41 @@
-.TH xiate 1 "2018-01-14" "xiate" "User Commands"
+.TH xiate 1 "2018-05-05" "xiate" "User Commands"
 .\" --------------------------------------------------------------------
 .SH NAME
-xiate \- terminal emulator (daemon)
+xiate \- terminal emulator
 .\" --------------------------------------------------------------------
 .SH SYNOPSIS
-\fBxiate\fP [\fIsuffix\fP]
+\fBxiate\fP
+[\fB\-class\fP \fIclass\fP]
+[\fB\-e\fP \fIargs...\fP]
+[\fB\-hold\fP]
+[\fB\-name\fP \fIname\fP]
+[\fB\-title\fP \fItitle\fP]
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
-\fBxiate\fP is the daemon component of xiate. This program must be
-running in order to launch terminal windows.
+\fBxiate\fP is a terminal emulator. When you run it, a terminal window
+will open.
 .\" --------------------------------------------------------------------
 .SH OPTIONS
-\fBxiate\fP knows exactly one command line argument which is optional:
+\fBxiate\fP provides some common options which are compatible to
+those of \fBxterm\fP(1):
 .TP
-\fIsuffix\fP
-\fBxiate\fP creates a UNIX socket on which it listens for incoming
-connections. This socket is named \(lqxiate-\fIsuffix\fP\(rq.
-\fIsuffix\fP defaults to \fBmain\fP.
+\fB\-class\fP \fIclass\fP
+Sets the window's class (part of the X property WM_CLASS).
+.TP
+\fB\-e\fP \fIargs...\fP
+Interpret all remaining arguments as an \(lqargument vector\(rq, i.e.
+tell \fBxiate\fP what to run. This must be the last option on the
+command line.
+.TP
+\fB\-hold\fP
+Don't close the window after the command has finished.
+.TP
+\fB\-name\fP \fIname\fP
+Sets the window's instance name (part of the X property WM_CLASS).
+.TP
+\fB\-title\fP \fItitle\fP
+Sets the initial window title. Be aware that the title will very likely
+be overwritten by child processes.
 .\" --------------------------------------------------------------------
 .SH "KEY BINDINGS"
 In windows launched by \fBxiate\fP, you can use the following key
@@ -57,6 +76,15 @@ hyperlinks or to \fBmatched\fP if a link has been detected via the
 regular expression (also see the comments in \fIconfig.h\fP).
 \fBargv[2]\fP will contain the actual link.
 .\" --------------------------------------------------------------------
+.SH "EXIT STATUS"
+\fBxiate\fP will exit with \fB0\fP if the child program running in the
+terminal has exited cleanly. It will exit with \fB1\fP if there was any
+error, or if the child exited with a non-zero exit code, or if the user
+forcibly closed the terminal window.
+.P
+It is not possible to get the child's original exit code, because you
+can't tell it apart from internal xiate errors anyway.
+.\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .P
 .TP
@@ -72,8 +100,6 @@ Points to the X11 display on which to open terminal windows.
 started in September 2015.
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
-See \fBxiatec\fP(1) for the client.
-.P
 Other terminal emulators include:
 .BR sakura (1),
 .BR st (1),

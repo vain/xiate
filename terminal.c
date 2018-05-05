@@ -1,5 +1,3 @@
-#include <fcntl.h>
-#include <gio/gunixsocketaddress.h>
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,14 +20,13 @@
 struct Client
 {
     char **argv;
-    char *cwd;
     gboolean hold;
     char *message;
     char *title;
     char *wm_class;
     char *wm_name;
+    GtkWidget *term;
     GtkWidget *win;
-    GIOStream *sock_stream;
     gboolean has_child_exit_status;
     gint child_exit_status;
     gchar *tooltip;
@@ -38,7 +35,7 @@ struct Client
 
 static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
 static void handle_history(VteTerminal *);
-static void setup_term(GtkWidget *, struct Client *);
+static void setup_term(struct Client *);
 static char *safe_emsg(GError *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
@@ -50,10 +47,7 @@ static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_window_destroy(GtkWidget *, gpointer);
 static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
 static void sig_window_title_changed(VteTerminal *, gpointer);
-static gboolean sock_incoming(GSocketService *, GSocketConnection *, GObject *,
-                              gpointer);
-static void socket_listen(char *);
-static gboolean term_new(gpointer);
+static void term_new(int, char **);
 static void term_set_font(GtkWidget *, VteTerminal *, size_t);
 static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
 static void term_set_size(GtkWidget *, VteTerminal *, glong, glong);
@@ -122,7 +116,7 @@ free_and_out:
 }
 
 void
-setup_term(GtkWidget *term, struct Client *c)
+setup_term(struct Client *c)
 {
     static char *args_default[] = { NULL, NULL, NULL };
     char **args_use;
@@ -157,39 +151,38 @@ setup_term(GtkWidget *term, struct Client *c)
     }
 
     /* Appearance. */
-    term_set_font(NULL, VTE_TERMINAL(term), 0);
+    term_set_font(NULL, VTE_TERMINAL(c->term), 0);
     gtk_widget_show_all(c->win);
 
-    vte_terminal_set_allow_bold(VTE_TERMINAL(term), enable_bold);
-    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(term), VTE_CURSOR_BLINK_OFF);
-    vte_terminal_set_mouse_autohide(VTE_TERMINAL(term), TRUE);
-    vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), scrollback_lines);
-
-    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(term), TRUE);
+    vte_terminal_set_allow_bold(VTE_TERMINAL(c->term), enable_bold);
+    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(c->term), VTE_CURSOR_BLINK_OFF);
+    vte_terminal_set_mouse_autohide(VTE_TERMINAL(c->term), TRUE);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(c->term), scrollback_lines);
+    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(c->term), TRUE);
 
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
     for (i = 0; i < 16; i++)
         gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
-    vte_terminal_set_colors(VTE_TERMINAL(term), &c_foreground_gdk,
+    vte_terminal_set_colors(VTE_TERMINAL(c->term), &c_foreground_gdk,
                             &c_background_gdk, c_palette_gdk, 16);
 
     if (c_bold != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_bold);
-        vte_terminal_set_color_bold(VTE_TERMINAL(term), &c_gdk);
+        vte_terminal_set_color_bold(VTE_TERMINAL(c->term), &c_gdk);
     }
 
     if (c_cursor != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_cursor);
-        vte_terminal_set_color_cursor(VTE_TERMINAL(term), &c_gdk);
+        vte_terminal_set_color_cursor(VTE_TERMINAL(c->term), &c_gdk);
     }
 
     if (c_cursor_foreground != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_cursor_foreground);
-        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(term), &c_gdk);
+        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(c->term), &c_gdk);
     }
 
     url_vregex = vte_regex_new_for_match(link_regex, strlen(link_regex),
@@ -201,32 +194,32 @@ setup_term(GtkWidget *term, struct Client *c)
     }
     else
     {
-        vte_terminal_match_add_regex(VTE_TERMINAL(term), url_vregex, 0);
+        vte_terminal_match_add_regex(VTE_TERMINAL(c->term), url_vregex, 0);
         vte_regex_unref(url_vregex);
     }
 
     /* Signals. */
-    g_signal_connect(G_OBJECT(term), "bell",
+    g_signal_connect(G_OBJECT(c->term), "bell",
                      G_CALLBACK(sig_bell), c->win);
-    g_signal_connect(G_OBJECT(term), "button-press-event",
+    g_signal_connect(G_OBJECT(c->term), "button-press-event",
                      G_CALLBACK(sig_button_press), NULL);
-    g_signal_connect(G_OBJECT(term), "child-exited",
+    g_signal_connect(G_OBJECT(c->term), "child-exited",
                      G_CALLBACK(sig_child_exited), c);
-    g_signal_connect(G_OBJECT(term), "decrease-font-size",
+    g_signal_connect(G_OBJECT(c->term), "decrease-font-size",
                      G_CALLBACK(sig_decrease_font_size), c->win);
-    g_signal_connect(G_OBJECT(term), "hyperlink-hover-uri-changed",
+    g_signal_connect(G_OBJECT(c->term), "hyperlink-hover-uri-changed",
                      G_CALLBACK(sig_hyperlink_changed), c);
-    g_signal_connect(G_OBJECT(term), "increase-font-size",
+    g_signal_connect(G_OBJECT(c->term), "increase-font-size",
                      G_CALLBACK(sig_increase_font_size), c->win);
-    g_signal_connect(G_OBJECT(term), "key-press-event",
+    g_signal_connect(G_OBJECT(c->term), "key-press-event",
                      G_CALLBACK(sig_key_press), c->win);
-    g_signal_connect(G_OBJECT(term), "resize-window",
+    g_signal_connect(G_OBJECT(c->term), "resize-window",
                      G_CALLBACK(sig_window_resize), c->win);
-    g_signal_connect(G_OBJECT(term), "window-title-changed",
+    g_signal_connect(G_OBJECT(c->term), "window-title-changed",
                      G_CALLBACK(sig_window_title_changed), c->win);
 
     /* Spawn child. */
-    vte_terminal_spawn_async(VTE_TERMINAL(term), VTE_PTY_DEFAULT, c->cwd,
+    vte_terminal_spawn_async(VTE_TERMINAL(c->term), VTE_PTY_DEFAULT, NULL,
                              args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
                              NULL, cb_spawn_async, c->win);
 }
@@ -393,8 +386,7 @@ void
 sig_window_destroy(GtkWidget *widget, gpointer data)
 {
     struct Client *c = (struct Client *)data;
-    GOutputStream *out_stream;
-    unsigned char exit_code_buffer[1];
+    int exit_code;
 
     (void)widget;
 
@@ -403,16 +395,14 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
      * the full integer to the client, since we can't/won't try to fake
      * stuff like "the child had a segfault" and it's not possible to
      * discriminate between child exit codes and other errors related to
-     * xiate's internals (socket error, X11 died, something like that).
-     * So just pass 0 or 1 to our client. This also makes socket
-     * handling easier, since we only ever send one byte. */
+     * xiate's internals (GTK error, X11 died, something like that). */
     if (c->has_child_exit_status)
     {
         /* This "if" clause has been borrowed from suckless st. */
         if (!WIFEXITED(c->child_exit_status) || WEXITSTATUS(c->child_exit_status))
-            exit_code_buffer[0] = 1;
+            exit_code = 1;
         else
-            exit_code_buffer[0] = 0;
+            exit_code = 0;
     }
     else
         /* If there is no child exit status, it means the user has
@@ -422,19 +412,9 @@ sig_window_destroy(GtkWidget *widget, gpointer data)
          *
          * This will also happen if we fail to start the child in the
          * first place. */
-        exit_code_buffer[0] = 1;
+        exit_code = 1;
 
-    /* Send and then close this client's socket to signal the client
-     * program that the window has been closed. */
-    out_stream = g_io_stream_get_output_stream(c->sock_stream);
-    g_output_stream_write(out_stream, exit_code_buffer, 1, NULL, NULL);
-    g_io_stream_close(c->sock_stream, NULL, NULL);
-    g_object_unref(c->sock_stream);
-
-    free(c->argv);
-    free(c->message);
-    free(c->tooltip);
-    free(c);
+    exit(exit_code);
 }
 
 void
@@ -451,231 +431,58 @@ sig_window_title_changed(VteTerminal *term, gpointer data)
     gtk_window_set_title(GTK_WINDOW(win), vte_terminal_get_window_title(term));
 }
 
-gboolean
-sock_incoming(GSocketService *service, GSocketConnection *connection,
-              GObject *source_object, gpointer data)
+void
+term_new(int argc, char **argv)
 {
-    GInputStream *in_stream;
-    gssize read_now;
-    gsize msg_size = 4096, i, sz_read = 0;
-    GSList *args = NULL;
-    struct Client *c = NULL;
-    guint args_i;
-    char option;
-    char *value;
-
-    (void)data;
-    (void)service;
-    (void)source_object;
+    struct Client *c;
+    int i;
 
     c = calloc(1, sizeof (struct Client));
     if (c == NULL)
     {
         perror(__NAME__": calloc for 'c'");
-        goto garbled;
-    }
-    c->message = calloc(1, msg_size);
-    if (c->message == NULL)
-    {
-        perror(__NAME__": calloc for 'c->message'");
-        goto garbled;
+        exit(EXIT_FAILURE);
     }
     c->tooltip = calloc(1, HYPERLINK_TARGET_SIZE);
     if (c->tooltip == NULL)
     {
         perror(__NAME__": calloc for 'c->tooltip'");
-        goto garbled;
+        exit(EXIT_FAILURE);
     }
     c->title = __NAME__;
     c->wm_class = __NAME_CAPITALIZED__;
     c->wm_name = __NAME__;
 
-    in_stream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-
-    /* We'll keep the socket open until the window has been closed. */
-    c->sock_stream = G_IO_STREAM(connection);
-    g_object_ref(c->sock_stream);
-
-    /* The client is expected to send at least "S\000F\000", so we read
-     * until we see a "\000F\000". In between, there can be any number
-     * of options, each of which must be terminated by a NUL byte. */
-    do
+    for (i = 1; i < argc; i++)
     {
-        read_now = g_input_stream_read(in_stream,
-                                       c->message + sz_read,
-                                       msg_size - sz_read,
-                                       NULL, NULL);
-        if (read_now == 0 || read_now == -1)
-            goto garbled;
-
-        sz_read += read_now;
-    } while (sz_read < 3 ||
-             c->message[(sz_read - 1) - 2] != 0   ||
-             c->message[(sz_read - 1) - 1] != 'F' ||
-             c->message[(sz_read - 1)    ] != 0);
-
-    for (i = 0; i < sz_read; i++)
-    {
-        switch (c->message[i])
+        if (strcmp(argv[i], "-class") == 0 && i < argc - 1)
+            c->wm_class = argv[++i];
+        else if (strcmp(argv[i], "-hold") == 0)
+            c->hold = TRUE;
+        else if (strcmp(argv[i], "-name") == 0 && i < argc - 1)
+            c->wm_name = argv[++i];
+        else if (strcmp(argv[i], "-title") == 0 && i < argc - 1)
+            c->title = argv[++i];
+        else if (strcmp(argv[i], "-e") == 0 && i < argc - 1)
         {
-            case 'S':
-            case 'F':
-                /* This signals the start or end of the client's
-                 * message. We just check here if the message format is
-                 * okay. */
-                i++;
-                if (i >= sz_read || c->message[i] != 0)
-                    goto garbled;
-                break;
-
-            case 'A':
-                /* After the 'A' follows a NUL terminated string. Add
-                 * this string to our list of arguments. */
-                i++;
-                if (i >= sz_read)
-                    goto garbled;
-                args = g_slist_append(args, &c->message[i]);
-
-                /* Jump to the NUL byte of the string, so that the next
-                 * iteration of the outer for-loop will jump to the next
-                 * byte after that NUL. */
-                while (i < sz_read && c->message[i] != 0)
-                    i++;
-                if (i == sz_read)
-                    goto garbled;
-
-                break;
-
-            case 'H':
-                c->hold = TRUE;
-                i++;
-                if (i >= sz_read || c->message[i] != 0)
-                    goto garbled;
-                break;
-
-            case 'O':
-                /* Directly after the 'O' follows another byte that
-                 * indicates which option to set. After that, a NUL
-                 * terminated string follows. */
-                i++;
-                if (i >= sz_read)
-                    goto garbled;
-                option = c->message[i];
-
-                i++;
-                if (i >= sz_read)
-                    goto garbled;
-                value = &c->message[i];
-
-                if (option == 'C' || option == 'c' || option == 'n' ||
-                    option == 't')
-                {
-                    /* Jump to the NUL byte of the string, so that the
-                     * next iteration of the outer for-loop will jump to
-                     * the next byte after that NUL. */
-                    while (i < sz_read && c->message[i] != 0)
-                        i++;
-                    if (i == sz_read)
-                        goto garbled;
-
-                    if (option == 'C')
-                        c->cwd = value;
-                    if (option == 'c')
-                        c->wm_class = value;
-                    if (option == 'n')
-                        c->wm_name = value;
-                    if (option == 't')
-                        c->title = value;
-                }
-                else
-                    goto garbled;
-
-                break;
-
-            default:
-                goto garbled;
+            c->argv = &argv[++i];
+            break;
         }
-    }
-
-    if (args != NULL)
-    {
-        c->argv = calloc(sizeof (char *), g_slist_length(args) + 1);
-        if (c->argv == NULL)
-            perror(__NAME__": calloc for 'c->argv'");
         else
         {
-            for (args_i = 0; args_i < g_slist_length(args); args_i++)
-                c->argv[args_i] = (char *)(g_slist_nth(args, args_i)->data);
+            fprintf(stderr, __NAME__": Invalid arguments, check manpage\n");
+            exit(EXIT_FAILURE);
         }
-        g_slist_free(args);
     }
-
-    /* We're not on the main thread. */
-    g_main_context_invoke(NULL, term_new, c);
-
-    /* Other handlers must not be called. */
-    return TRUE;
-
-garbled:
-    fprintf(stderr, __NAME__": Garbled message or memory error, aborting.\n");
-    if (c != NULL && c->sock_stream != NULL)
-        g_object_unref(c->sock_stream);
-    if (c != NULL)
-        free(c->message);
-    free(c);
-    if (args != NULL)
-        g_slist_free(args);
-    return TRUE;
-}
-
-void
-socket_listen(char *suffix)
-{
-    GSocketService *sock;
-    GSocketAddress *sa;
-    GError *err = NULL;
-    char *path;
-
-    path = g_strdup_printf("/tmp/%s-%d", __NAME__, getuid());
-    mkdir(path, S_IRWXU);
-    g_free(path);
-
-    path = g_strdup_printf("/tmp/%s-%d/%s", __NAME__, getuid(), suffix);
-    unlink(path);
-    sa = g_unix_socket_address_new(path);
-    g_free(path);
-
-    sock = g_threaded_socket_service_new(-1);
-    if (!g_socket_listener_add_address(G_SOCKET_LISTENER(sock), sa,
-                                       G_SOCKET_TYPE_STREAM,
-                                       G_SOCKET_PROTOCOL_DEFAULT,
-                                       NULL, NULL, &err))
-    {
-        fprintf(stderr, "Failed to set up socket: '%s'\n", safe_emsg(err));
-        exit(EXIT_FAILURE);
-    }
-
-    g_signal_connect(G_OBJECT(sock), "run", G_CALLBACK(sock_incoming), NULL);
-    g_socket_service_start(sock);
-}
-
-gboolean
-term_new(gpointer data)
-{
-    struct Client *c = (struct Client *)data;
-    GtkWidget *term;
 
     c->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(c->win), c->title);
     gtk_window_set_wmclass(GTK_WINDOW(c->win), c->wm_name, c->wm_class);
     g_signal_connect(G_OBJECT(c->win), "destroy", G_CALLBACK(sig_window_destroy), c);
 
-    term = vte_terminal_new();
-    gtk_container_add(GTK_CONTAINER(c->win), term);
-    setup_term(term, c);
-
-    /* Remove this source. */
-    return FALSE;
+    c->term = vte_terminal_new();
+    gtk_container_add(GTK_CONTAINER(c->win), c->term);
+    setup_term(c);
 }
 
 void
@@ -740,16 +547,7 @@ term_set_size(GtkWidget *win, VteTerminal *term, glong width, glong height)
 int
 main(int argc, char **argv)
 {
-    if (argc < 1 || argc > 2)
-    {
-        fprintf(stderr, __NAME__": Invalid arguments, check manpage\n");
-        return 1;
-    }
-
     gtk_init(&argc, &argv);
-    if (argc == 2)
-        socket_listen(argv[1]);
-    else
-        socket_listen("main");
+    term_new(argc, argv);
     gtk_main();
 }
