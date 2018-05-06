@@ -189,7 +189,7 @@ setup_term(struct Client *c)
                                          PCRE2_MULTILINE | PCRE2_CASELESS, &err);
     if (url_vregex == NULL)
     {
-        fprintf(stderr, "link_regex: %s\n", safe_emsg(err));
+        fprintf(stderr, __NAME__": link_regex: %s\n", safe_emsg(err));
         g_clear_error(&err);
     }
     else
