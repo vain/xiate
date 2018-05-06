@@ -10,6 +10,7 @@ gboolean enable_bold = TRUE;
 
 /* Default fonts and font sizes. These strings will be parsed by pango,
  * see the following URL:
+ *
  * https://developer.gnome.org/pango/stable/pango-Fonts.html#pango-font-description-from-string
  *
  * You can define up to 9 fonts, at least one font must be defined. You
