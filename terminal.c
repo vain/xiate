@@ -19,11 +19,7 @@
 
 struct Client
 {
-    char **argv;
     gboolean hold;
-    char *title;
-    char *wm_class;
-    char *wm_name;
     GtkWidget *term;
     GtkWidget *win;
     gboolean has_child_exit_status;
@@ -325,7 +321,8 @@ term_new(int argc, char **argv)
 {
     struct Client *c;
     static char *args_default[] = { NULL, NULL, NULL };
-    char **args_use;
+    char **argv_cmdline = NULL, **args_use;
+    char *title = __NAME__, *wm_class = __NAME_CAPITALIZED__, *wm_name = __NAME__;
     int i;
     GdkRGBA c_foreground_gdk;
     GdkRGBA c_background_gdk;
@@ -348,24 +345,21 @@ term_new(int argc, char **argv)
         perror(__NAME__": calloc for 'c->tooltip'");
         exit(EXIT_FAILURE);
     }
-    c->title = __NAME__;
-    c->wm_class = __NAME_CAPITALIZED__;
-    c->wm_name = __NAME__;
 
     /* Handle arguments. */
     for (i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-class") == 0 && i < argc - 1)
-            c->wm_class = argv[++i];
+            wm_class = argv[++i];
         else if (strcmp(argv[i], "-hold") == 0)
             c->hold = TRUE;
         else if (strcmp(argv[i], "-name") == 0 && i < argc - 1)
-            c->wm_name = argv[++i];
+            wm_name = argv[++i];
         else if (strcmp(argv[i], "-title") == 0 && i < argc - 1)
-            c->title = argv[++i];
+            title = argv[++i];
         else if (strcmp(argv[i], "-e") == 0 && i < argc - 1)
         {
-            c->argv = &argv[++i];
+            argv_cmdline = &argv[++i];
             break;
         }
         else
@@ -377,8 +371,8 @@ term_new(int argc, char **argv)
 
     /* Create GTK+ widgets. */
     c->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(c->win), c->title);
-    gtk_window_set_wmclass(GTK_WINDOW(c->win), c->wm_name, c->wm_class);
+    gtk_window_set_title(GTK_WINDOW(c->win), title);
+    gtk_window_set_wmclass(GTK_WINDOW(c->win), wm_name, wm_class);
     g_signal_connect(G_OBJECT(c->win), "destroy", G_CALLBACK(sig_window_destroy), c);
 
     c->term = vte_terminal_new();
@@ -453,9 +447,9 @@ term_new(int argc, char **argv)
                      G_CALLBACK(sig_window_title_changed), c->win);
 
     /* Spawn child. */
-    if (c->argv != NULL)
+    if (argv_cmdline != NULL)
     {
-        args_use = c->argv;
+        args_use = argv_cmdline;
         spawn_flags = G_SPAWN_SEARCH_PATH;
     }
     else
