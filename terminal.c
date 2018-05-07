@@ -35,7 +35,6 @@ struct Client
 
 static void cb_spawn_async(VteTerminal *, GPid, GError *, gpointer);
 static void handle_history(VteTerminal *);
-static void setup_term(struct Client *);
 static char *safe_emsg(GError *);
 static void sig_bell(VteTerminal *, gpointer);
 static gboolean sig_button_press(GtkWidget *, GdkEvent *, gpointer);
@@ -113,115 +112,6 @@ free_and_out:
     if (tmpfile != NULL)
         g_object_unref(tmpfile);
     g_clear_error(&err);
-}
-
-void
-setup_term(struct Client *c)
-{
-    static char *args_default[] = { NULL, NULL, NULL };
-    char **args_use;
-    size_t i;
-    GdkRGBA c_foreground_gdk;
-    GdkRGBA c_background_gdk;
-    GdkRGBA c_palette_gdk[16];
-    GdkRGBA c_gdk;
-    VteRegex *url_vregex = NULL;
-    GError *err = NULL;
-    GSpawnFlags spawn_flags;
-
-    if (c->argv != NULL)
-    {
-        args_use = c->argv;
-        spawn_flags = G_SPAWN_SEARCH_PATH;
-    }
-    else
-    {
-        if (args_default[0] == NULL)
-        {
-            args_default[0] = vte_get_user_shell();
-            if (args_default[0] == NULL)
-                args_default[0] = "/bin/sh";
-            if (login_shell)
-                args_default[1] = g_strdup_printf("-%s", args_default[0]);
-            else
-                args_default[1] = args_default[0];
-        }
-        args_use = args_default;
-        spawn_flags = G_SPAWN_SEARCH_PATH | G_SPAWN_FILE_AND_ARGV_ZERO;
-    }
-
-    /* Appearance. */
-    term_set_font(NULL, VTE_TERMINAL(c->term), 0);
-    gtk_widget_show_all(c->win);
-
-    vte_terminal_set_allow_bold(VTE_TERMINAL(c->term), enable_bold);
-    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(c->term), VTE_CURSOR_BLINK_OFF);
-    vte_terminal_set_mouse_autohide(VTE_TERMINAL(c->term), TRUE);
-    vte_terminal_set_scrollback_lines(VTE_TERMINAL(c->term), scrollback_lines);
-    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(c->term), TRUE);
-
-    gdk_rgba_parse(&c_foreground_gdk, c_foreground);
-    gdk_rgba_parse(&c_background_gdk, c_background);
-    for (i = 0; i < 16; i++)
-        gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
-    vte_terminal_set_colors(VTE_TERMINAL(c->term), &c_foreground_gdk,
-                            &c_background_gdk, c_palette_gdk, 16);
-
-    if (c_bold != NULL)
-    {
-        gdk_rgba_parse(&c_gdk, c_bold);
-        vte_terminal_set_color_bold(VTE_TERMINAL(c->term), &c_gdk);
-    }
-
-    if (c_cursor != NULL)
-    {
-        gdk_rgba_parse(&c_gdk, c_cursor);
-        vte_terminal_set_color_cursor(VTE_TERMINAL(c->term), &c_gdk);
-    }
-
-    if (c_cursor_foreground != NULL)
-    {
-        gdk_rgba_parse(&c_gdk, c_cursor_foreground);
-        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(c->term), &c_gdk);
-    }
-
-    url_vregex = vte_regex_new_for_match(link_regex, strlen(link_regex),
-                                         PCRE2_MULTILINE | PCRE2_CASELESS, &err);
-    if (url_vregex == NULL)
-    {
-        fprintf(stderr, __NAME__": link_regex: %s\n", safe_emsg(err));
-        g_clear_error(&err);
-    }
-    else
-    {
-        vte_terminal_match_add_regex(VTE_TERMINAL(c->term), url_vregex, 0);
-        vte_regex_unref(url_vregex);
-    }
-
-    /* Signals. */
-    g_signal_connect(G_OBJECT(c->term), "bell",
-                     G_CALLBACK(sig_bell), c->win);
-    g_signal_connect(G_OBJECT(c->term), "button-press-event",
-                     G_CALLBACK(sig_button_press), NULL);
-    g_signal_connect(G_OBJECT(c->term), "child-exited",
-                     G_CALLBACK(sig_child_exited), c);
-    g_signal_connect(G_OBJECT(c->term), "decrease-font-size",
-                     G_CALLBACK(sig_decrease_font_size), c->win);
-    g_signal_connect(G_OBJECT(c->term), "hyperlink-hover-uri-changed",
-                     G_CALLBACK(sig_hyperlink_changed), c);
-    g_signal_connect(G_OBJECT(c->term), "increase-font-size",
-                     G_CALLBACK(sig_increase_font_size), c->win);
-    g_signal_connect(G_OBJECT(c->term), "key-press-event",
-                     G_CALLBACK(sig_key_press), c->win);
-    g_signal_connect(G_OBJECT(c->term), "resize-window",
-                     G_CALLBACK(sig_window_resize), c->win);
-    g_signal_connect(G_OBJECT(c->term), "window-title-changed",
-                     G_CALLBACK(sig_window_title_changed), c->win);
-
-    /* Spawn child. */
-    vte_terminal_spawn_async(VTE_TERMINAL(c->term), VTE_PTY_DEFAULT, NULL,
-                             args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
-                             NULL, cb_spawn_async, c->win);
 }
 
 char *
@@ -435,8 +325,18 @@ void
 term_new(int argc, char **argv)
 {
     struct Client *c;
+    static char *args_default[] = { NULL, NULL, NULL };
+    char **args_use;
     int i;
+    GdkRGBA c_foreground_gdk;
+    GdkRGBA c_background_gdk;
+    GdkRGBA c_palette_gdk[16];
+    GdkRGBA c_gdk;
+    VteRegex *url_vregex = NULL;
+    GError *err = NULL;
+    GSpawnFlags spawn_flags;
 
+    /* Initialize structures. */
     c = calloc(1, sizeof (struct Client));
     if (c == NULL)
     {
@@ -453,6 +353,7 @@ term_new(int argc, char **argv)
     c->wm_class = __NAME_CAPITALIZED__;
     c->wm_name = __NAME__;
 
+    /* Handle arguments. */
     for (i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-class") == 0 && i < argc - 1)
@@ -475,6 +376,7 @@ term_new(int argc, char **argv)
         }
     }
 
+    /* Create GTK+ widgets. */
     c->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(c->win), c->title);
     gtk_window_set_wmclass(GTK_WINDOW(c->win), c->wm_name, c->wm_class);
@@ -482,7 +384,100 @@ term_new(int argc, char **argv)
 
     c->term = vte_terminal_new();
     gtk_container_add(GTK_CONTAINER(c->win), c->term);
-    setup_term(c);
+
+    /* Appearance. */
+    term_set_font(NULL, VTE_TERMINAL(c->term), 0);
+    gtk_widget_show_all(c->win);
+
+    vte_terminal_set_allow_bold(VTE_TERMINAL(c->term), enable_bold);
+    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(c->term), VTE_CURSOR_BLINK_OFF);
+    vte_terminal_set_mouse_autohide(VTE_TERMINAL(c->term), TRUE);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(c->term), scrollback_lines);
+    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(c->term), TRUE);
+
+    gdk_rgba_parse(&c_foreground_gdk, c_foreground);
+    gdk_rgba_parse(&c_background_gdk, c_background);
+    for (i = 0; i < 16; i++)
+        gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
+    vte_terminal_set_colors(VTE_TERMINAL(c->term), &c_foreground_gdk,
+                            &c_background_gdk, c_palette_gdk, 16);
+
+    if (c_bold != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_bold);
+        vte_terminal_set_color_bold(VTE_TERMINAL(c->term), &c_gdk);
+    }
+
+    if (c_cursor != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_cursor);
+        vte_terminal_set_color_cursor(VTE_TERMINAL(c->term), &c_gdk);
+    }
+
+    if (c_cursor_foreground != NULL)
+    {
+        gdk_rgba_parse(&c_gdk, c_cursor_foreground);
+        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(c->term), &c_gdk);
+    }
+
+    url_vregex = vte_regex_new_for_match(link_regex, strlen(link_regex),
+                                         PCRE2_MULTILINE | PCRE2_CASELESS, &err);
+    if (url_vregex == NULL)
+    {
+        fprintf(stderr, __NAME__": link_regex: %s\n", safe_emsg(err));
+        g_clear_error(&err);
+    }
+    else
+    {
+        vte_terminal_match_add_regex(VTE_TERMINAL(c->term), url_vregex, 0);
+        vte_regex_unref(url_vregex);
+    }
+
+    /* Signals. */
+    g_signal_connect(G_OBJECT(c->term), "bell",
+                     G_CALLBACK(sig_bell), c->win);
+    g_signal_connect(G_OBJECT(c->term), "button-press-event",
+                     G_CALLBACK(sig_button_press), NULL);
+    g_signal_connect(G_OBJECT(c->term), "child-exited",
+                     G_CALLBACK(sig_child_exited), c);
+    g_signal_connect(G_OBJECT(c->term), "decrease-font-size",
+                     G_CALLBACK(sig_decrease_font_size), c->win);
+    g_signal_connect(G_OBJECT(c->term), "hyperlink-hover-uri-changed",
+                     G_CALLBACK(sig_hyperlink_changed), c);
+    g_signal_connect(G_OBJECT(c->term), "increase-font-size",
+                     G_CALLBACK(sig_increase_font_size), c->win);
+    g_signal_connect(G_OBJECT(c->term), "key-press-event",
+                     G_CALLBACK(sig_key_press), c->win);
+    g_signal_connect(G_OBJECT(c->term), "resize-window",
+                     G_CALLBACK(sig_window_resize), c->win);
+    g_signal_connect(G_OBJECT(c->term), "window-title-changed",
+                     G_CALLBACK(sig_window_title_changed), c->win);
+
+    /* Spawn child. */
+    if (c->argv != NULL)
+    {
+        args_use = c->argv;
+        spawn_flags = G_SPAWN_SEARCH_PATH;
+    }
+    else
+    {
+        if (args_default[0] == NULL)
+        {
+            args_default[0] = vte_get_user_shell();
+            if (args_default[0] == NULL)
+                args_default[0] = "/bin/sh";
+            if (login_shell)
+                args_default[1] = g_strdup_printf("-%s", args_default[0]);
+            else
+                args_default[1] = args_default[0];
+        }
+        args_use = args_default;
+        spawn_flags = G_SPAWN_SEARCH_PATH | G_SPAWN_FILE_AND_ARGV_ZERO;
+    }
+
+    vte_terminal_spawn_async(VTE_TERMINAL(c->term), VTE_PTY_DEFAULT, NULL,
+                             args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
+                             NULL, cb_spawn_async, c->win);
 }
 
 void
