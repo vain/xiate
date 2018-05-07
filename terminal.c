@@ -24,7 +24,7 @@ struct Client
     GtkWidget *win;
     gboolean has_child_exit_status;
     gint child_exit_status;
-    gchar *tooltip;
+    gchar tooltip[HYPERLINK_TARGET_SIZE];
 };
 
 
@@ -41,7 +41,7 @@ static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_window_destroy(GtkWidget *, gpointer);
 static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
 static void sig_window_title_changed(VteTerminal *, gpointer);
-static void term_new(int, char **);
+static void term_new(struct Client *, int, char **);
 static void term_set_font(GtkWidget *, VteTerminal *, size_t);
 static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
 static void term_set_size(GtkWidget *, VteTerminal *, glong, glong);
@@ -317,9 +317,8 @@ sig_window_title_changed(VteTerminal *term, gpointer data)
 }
 
 void
-term_new(int argc, char **argv)
+term_new(struct Client *c, int argc, char **argv)
 {
-    struct Client *c;
     static char *args_default[] = { NULL, NULL, NULL };
     char **argv_cmdline = NULL, **args_use;
     char *title = __NAME__, *wm_class = __NAME_CAPITALIZED__, *wm_name = __NAME__;
@@ -331,20 +330,6 @@ term_new(int argc, char **argv)
     VteRegex *url_vregex = NULL;
     GError *err = NULL;
     GSpawnFlags spawn_flags;
-
-    /* Initialize structures. */
-    c = calloc(1, sizeof (struct Client));
-    if (c == NULL)
-    {
-        perror(__NAME__": calloc for 'c'");
-        exit(EXIT_FAILURE);
-    }
-    c->tooltip = calloc(1, HYPERLINK_TARGET_SIZE);
-    if (c->tooltip == NULL)
-    {
-        perror(__NAME__": calloc for 'c->tooltip'");
-        exit(EXIT_FAILURE);
-    }
 
     /* Handle arguments. */
     for (i = 1; i < argc; i++)
@@ -535,7 +520,9 @@ term_set_size(GtkWidget *win, VteTerminal *term, glong width, glong height)
 int
 main(int argc, char **argv)
 {
+    struct Client c = {0};
+
     gtk_init(&argc, &argv);
-    term_new(argc, argv);
+    term_new(&c, argc, argv);
     gtk_main();
 }
