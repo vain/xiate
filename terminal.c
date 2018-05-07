@@ -21,7 +21,6 @@ struct Client
 {
     char **argv;
     gboolean hold;
-    char *message;
     char *title;
     char *wm_class;
     char *wm_name;
