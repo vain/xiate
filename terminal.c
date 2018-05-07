@@ -17,7 +17,7 @@
 #include "config.h"
 
 
-struct Client
+struct Terminal
 {
     gboolean hold;
     GtkWidget *term;
@@ -41,7 +41,7 @@ static gboolean sig_key_press(GtkWidget *, GdkEvent *, gpointer);
 static void sig_window_destroy(GtkWidget *, gpointer);
 static void sig_window_resize(VteTerminal *, guint, guint, gpointer);
 static void sig_window_title_changed(VteTerminal *, gpointer);
-static void term_new(struct Client *, int, char **);
+static void term_new(struct Terminal *, int, char **);
 static void term_set_font(GtkWidget *, VteTerminal *, size_t);
 static void term_set_font_scale(GtkWidget *, VteTerminal *, gdouble);
 static void term_set_size(GtkWidget *, VteTerminal *, glong, glong);
@@ -180,20 +180,20 @@ sig_button_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_child_exited(VteTerminal *term, gint status, gpointer data)
 {
-    struct Client *c = (struct Client *)data;
+    struct Terminal *t = (struct Terminal *)data;
     GdkRGBA c_background_gdk;
 
-    c->has_child_exit_status = TRUE;
-    c->child_exit_status = status;
+    t->has_child_exit_status = TRUE;
+    t->child_exit_status = status;
 
-    if (c->hold)
+    if (t->hold)
     {
         gdk_rgba_parse(&c_background_gdk, c_background);
         vte_terminal_set_color_cursor(term, &c_background_gdk);
-        gtk_window_set_title(GTK_WINDOW(c->win), __NAME__" - CHILD HAS QUIT");
+        gtk_window_set_title(GTK_WINDOW(t->win), __NAME__" - CHILD HAS QUIT");
     }
     else
-        gtk_widget_destroy(c->win);
+        gtk_widget_destroy(t->win);
 }
 
 void
@@ -212,7 +212,7 @@ void
 sig_hyperlink_changed(VteTerminal *term, gchar *uri, GdkRectangle *bbox,
                       gpointer data)
 {
-    struct Client *c = (struct Client *)data;
+    struct Terminal *t = (struct Terminal *)data;
 
     (void)bbox;
 
@@ -224,8 +224,8 @@ sig_hyperlink_changed(VteTerminal *term, gchar *uri, GdkRectangle *bbox,
          * this handlers has finished. It is not 100% clear to me if GTK
          * creates a copy of that string -- probably not. So, we better
          * make one. */
-        g_strlcpy(c->tooltip, uri, HYPERLINK_TARGET_SIZE);
-        gtk_widget_set_tooltip_text(GTK_WIDGET(term), c->tooltip);
+        g_strlcpy(t->tooltip, uri, HYPERLINK_TARGET_SIZE);
+        gtk_widget_set_tooltip_text(GTK_WIDGET(term), t->tooltip);
     }
 }
 
@@ -270,21 +270,21 @@ sig_key_press(GtkWidget *widget, GdkEvent *event, gpointer data)
 void
 sig_window_destroy(GtkWidget *widget, gpointer data)
 {
-    struct Client *c = (struct Client *)data;
+    struct Terminal *t = (struct Terminal *)data;
     int exit_code;
 
     (void)widget;
 
     /* Figure out exit code of our child. We deal with the full status
-     * code as returned by wait(2) here, but there's no point in sending
-     * the full integer to the client, since we can't/won't try to fake
+     * code as returned by wait(2) here, but there's no point in
+     * returning the full integer, since we can't/won't try to fake
      * stuff like "the child had a segfault" and it's not possible to
      * discriminate between child exit codes and other errors related to
      * xiate's internals (GTK error, X11 died, something like that). */
-    if (c->has_child_exit_status)
+    if (t->has_child_exit_status)
     {
         /* This "if" clause has been borrowed from suckless st. */
-        if (!WIFEXITED(c->child_exit_status) || WEXITSTATUS(c->child_exit_status))
+        if (!WIFEXITED(t->child_exit_status) || WEXITSTATUS(t->child_exit_status))
             exit_code = 1;
         else
             exit_code = 0;
@@ -317,7 +317,7 @@ sig_window_title_changed(VteTerminal *term, gpointer data)
 }
 
 void
-term_new(struct Client *c, int argc, char **argv)
+term_new(struct Terminal *t, int argc, char **argv)
 {
     static char *args_default[] = { NULL, NULL, NULL };
     char **argv_cmdline = NULL, **args_use;
@@ -337,7 +337,7 @@ term_new(struct Client *c, int argc, char **argv)
         if (strcmp(argv[i], "-class") == 0 && i < argc - 1)
             wm_class = argv[++i];
         else if (strcmp(argv[i], "-hold") == 0)
-            c->hold = TRUE;
+            t->hold = TRUE;
         else if (strcmp(argv[i], "-name") == 0 && i < argc - 1)
             wm_name = argv[++i];
         else if (strcmp(argv[i], "-title") == 0 && i < argc - 1)
@@ -355,47 +355,47 @@ term_new(struct Client *c, int argc, char **argv)
     }
 
     /* Create GTK+ widgets. */
-    c->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(c->win), title);
-    gtk_window_set_wmclass(GTK_WINDOW(c->win), wm_name, wm_class);
-    g_signal_connect(G_OBJECT(c->win), "destroy", G_CALLBACK(sig_window_destroy), c);
+    t->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(t->win), title);
+    gtk_window_set_wmclass(GTK_WINDOW(t->win), wm_name, wm_class);
+    g_signal_connect(G_OBJECT(t->win), "destroy", G_CALLBACK(sig_window_destroy), t);
 
-    c->term = vte_terminal_new();
-    gtk_container_add(GTK_CONTAINER(c->win), c->term);
+    t->term = vte_terminal_new();
+    gtk_container_add(GTK_CONTAINER(t->win), t->term);
 
     /* Appearance. */
-    term_set_font(NULL, VTE_TERMINAL(c->term), 0);
-    gtk_widget_show_all(c->win);
+    term_set_font(NULL, VTE_TERMINAL(t->term), 0);
+    gtk_widget_show_all(t->win);
 
-    vte_terminal_set_allow_bold(VTE_TERMINAL(c->term), enable_bold);
-    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(c->term), VTE_CURSOR_BLINK_OFF);
-    vte_terminal_set_mouse_autohide(VTE_TERMINAL(c->term), TRUE);
-    vte_terminal_set_scrollback_lines(VTE_TERMINAL(c->term), scrollback_lines);
-    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(c->term), TRUE);
+    vte_terminal_set_allow_bold(VTE_TERMINAL(t->term), enable_bold);
+    vte_terminal_set_cursor_blink_mode(VTE_TERMINAL(t->term), VTE_CURSOR_BLINK_OFF);
+    vte_terminal_set_mouse_autohide(VTE_TERMINAL(t->term), TRUE);
+    vte_terminal_set_scrollback_lines(VTE_TERMINAL(t->term), scrollback_lines);
+    vte_terminal_set_allow_hyperlink(VTE_TERMINAL(t->term), TRUE);
 
     gdk_rgba_parse(&c_foreground_gdk, c_foreground);
     gdk_rgba_parse(&c_background_gdk, c_background);
     for (i = 0; i < 16; i++)
         gdk_rgba_parse(&c_palette_gdk[i], c_palette[i]);
-    vte_terminal_set_colors(VTE_TERMINAL(c->term), &c_foreground_gdk,
+    vte_terminal_set_colors(VTE_TERMINAL(t->term), &c_foreground_gdk,
                             &c_background_gdk, c_palette_gdk, 16);
 
     if (c_bold != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_bold);
-        vte_terminal_set_color_bold(VTE_TERMINAL(c->term), &c_gdk);
+        vte_terminal_set_color_bold(VTE_TERMINAL(t->term), &c_gdk);
     }
 
     if (c_cursor != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_cursor);
-        vte_terminal_set_color_cursor(VTE_TERMINAL(c->term), &c_gdk);
+        vte_terminal_set_color_cursor(VTE_TERMINAL(t->term), &c_gdk);
     }
 
     if (c_cursor_foreground != NULL)
     {
         gdk_rgba_parse(&c_gdk, c_cursor_foreground);
-        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(c->term), &c_gdk);
+        vte_terminal_set_color_cursor_foreground(VTE_TERMINAL(t->term), &c_gdk);
     }
 
     url_vregex = vte_regex_new_for_match(link_regex, strlen(link_regex),
@@ -407,29 +407,29 @@ term_new(struct Client *c, int argc, char **argv)
     }
     else
     {
-        vte_terminal_match_add_regex(VTE_TERMINAL(c->term), url_vregex, 0);
+        vte_terminal_match_add_regex(VTE_TERMINAL(t->term), url_vregex, 0);
         vte_regex_unref(url_vregex);
     }
 
     /* Signals. */
-    g_signal_connect(G_OBJECT(c->term), "bell",
-                     G_CALLBACK(sig_bell), c->win);
-    g_signal_connect(G_OBJECT(c->term), "button-press-event",
+    g_signal_connect(G_OBJECT(t->term), "bell",
+                     G_CALLBACK(sig_bell), t->win);
+    g_signal_connect(G_OBJECT(t->term), "button-press-event",
                      G_CALLBACK(sig_button_press), NULL);
-    g_signal_connect(G_OBJECT(c->term), "child-exited",
-                     G_CALLBACK(sig_child_exited), c);
-    g_signal_connect(G_OBJECT(c->term), "decrease-font-size",
-                     G_CALLBACK(sig_decrease_font_size), c->win);
-    g_signal_connect(G_OBJECT(c->term), "hyperlink-hover-uri-changed",
-                     G_CALLBACK(sig_hyperlink_changed), c);
-    g_signal_connect(G_OBJECT(c->term), "increase-font-size",
-                     G_CALLBACK(sig_increase_font_size), c->win);
-    g_signal_connect(G_OBJECT(c->term), "key-press-event",
-                     G_CALLBACK(sig_key_press), c->win);
-    g_signal_connect(G_OBJECT(c->term), "resize-window",
-                     G_CALLBACK(sig_window_resize), c->win);
-    g_signal_connect(G_OBJECT(c->term), "window-title-changed",
-                     G_CALLBACK(sig_window_title_changed), c->win);
+    g_signal_connect(G_OBJECT(t->term), "child-exited",
+                     G_CALLBACK(sig_child_exited), t);
+    g_signal_connect(G_OBJECT(t->term), "decrease-font-size",
+                     G_CALLBACK(sig_decrease_font_size), t->win);
+    g_signal_connect(G_OBJECT(t->term), "hyperlink-hover-uri-changed",
+                     G_CALLBACK(sig_hyperlink_changed), t);
+    g_signal_connect(G_OBJECT(t->term), "increase-font-size",
+                     G_CALLBACK(sig_increase_font_size), t->win);
+    g_signal_connect(G_OBJECT(t->term), "key-press-event",
+                     G_CALLBACK(sig_key_press), t->win);
+    g_signal_connect(G_OBJECT(t->term), "resize-window",
+                     G_CALLBACK(sig_window_resize), t->win);
+    g_signal_connect(G_OBJECT(t->term), "window-title-changed",
+                     G_CALLBACK(sig_window_title_changed), t->win);
 
     /* Spawn child. */
     if (argv_cmdline != NULL)
@@ -453,9 +453,9 @@ term_new(struct Client *c, int argc, char **argv)
         spawn_flags = G_SPAWN_SEARCH_PATH | G_SPAWN_FILE_AND_ARGV_ZERO;
     }
 
-    vte_terminal_spawn_async(VTE_TERMINAL(c->term), VTE_PTY_DEFAULT, NULL,
+    vte_terminal_spawn_async(VTE_TERMINAL(t->term), VTE_PTY_DEFAULT, NULL,
                              args_use, NULL, spawn_flags, NULL, NULL, NULL, 60,
-                             NULL, cb_spawn_async, c->win);
+                             NULL, cb_spawn_async, t->win);
 }
 
 void
@@ -520,9 +520,9 @@ term_set_size(GtkWidget *win, VteTerminal *term, glong width, glong height)
 int
 main(int argc, char **argv)
 {
-    struct Client c = {0};
+    struct Terminal t = {0};
 
     gtk_init(&argc, &argv);
-    term_new(&c, argc, argv);
+    term_new(&t, argc, argv);
     gtk_main();
 }
