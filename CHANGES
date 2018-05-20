@@ -1,6 +1,6 @@
 Release history for xiate
 
-next
+v18.05  2018-05-20
   [Changed]
   - The client-server model has been removed. There's only one binary
     called "xiate" now and it launches one terminal window. This change
